@@ -46,9 +46,6 @@
                             <option value="producto_simple" {% if (producto and (producto.tipo_producto in ['producto_simple', 'producto_final'] and not producto.recetas)) or (not producto and request.args.get('tipo') != 'combo') %}selected{% endif %}>
                                 🍺 Producto Directo (Stock propio: Cervezas, Botellas, Gaseosas)
                             </option>
-                            <option value="combo" {% if (producto and producto.tipo_producto == 'combo') or (not producto and request.args.get('tipo') == 'combo') %}selected{% endif %}>
-                                📦 Combo / Paquete (Varios productos juntos a un precio especial)
-                            </option>
                             <option value="preparado" {% if producto and producto.tipo_producto == 'preparado' %}selected{% endif %}>
                                 🍸 Cóctel / Plato Preparado (Receta de insumos: Mojito, Picada)
                             </option>
@@ -205,47 +202,7 @@
                     </div>
                 </div>
                 
-                <!-- ═══════════════════ SECCIÓN DE ARMAR COMBO ═══════════════════ -->
-                <div class="col-md-12 mt-5 p-4 rounded-4 bg-light border" id="divCombos">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                        <div>
-                            <h5 class="fw-bold text-brand-black m-0">
-                                <i class="fa-solid fa-layer-group text-brand-orange me-2"></i>Productos que Componen este Combo
-                            </h5>
-                            <small class="text-muted">Selecciona los productos y las cantidades que se descontarán automáticamente al vender el combo.</small>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-orange rounded-pill fw-bold" id="btnAddComboItem">
-                            <i class="fa-solid fa-plus me-1"></i> Añadir Producto al Combo
-                        </button>
-                    </div>
-                    
-                    <div id="comboItemsContainer">
-                        {% if producto and producto.es_combo and producto.recetas %}
-                            {% for receta in producto.recetas %}
-                            <div class="row g-2 mb-2 combo-line align-items-center bg-white p-2 rounded-3 border">
-                                <div class="col-md-8 col-7">
-                                    <label class="form-label small text-muted mb-1">Producto</label>
-                                    <select name="combo_producto_id[]" class="form-select bg-light border-0 fw-bold">
-                                        <option value="">Seleccionar Producto...</option>
-                                        {% for prod in todos_productos %}
-                                        <option value="{{ prod.id }}" {% if prod.id == receta.insumo_id %}selected{% endif %}>
-                                            {{ prod.nombre }} (SKU: {{ prod.sku }})
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-3 col-3">
-                                    <label class="form-label small text-muted mb-1">Cantidad</label>
-                                    <input type="number" step="1" min="1" name="combo_cantidad[]" class="form-control bg-light border-0 text-center fw-bold" placeholder="Cant." value="{{ "%.0f"|format(receta.cantidad_requerida|float) }}">
-                                </div>
-                                <div class="col-md-1 col-2 text-end pt-3">
-                                    <button type="button" class="btn btn-outline-danger btn-remove-combo-item rounded-circle" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
+
 
                 <!-- ═══════════════════ SECCIÓN DE RECETA / INSUMOS PREPARADOS ═══════════════════ -->
                 <div class="col-md-12 mt-5 p-4 rounded-4 bg-light border" id="divRecetas">
@@ -307,13 +264,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const divStock = document.getElementById('divStock');
     const divCosto = document.getElementById('divCosto');
     const divPrecio = document.getElementById('divPrecio');
-    const divCombos = document.getElementById('divCombos');
     const divRecetas = document.getElementById('divRecetas');
     
     const divConversorOnzas = document.getElementById('divConversorOnzas');
-    
-    const btnAddComboItem = document.getElementById('btnAddComboItem');
-    const comboItemsContainer = document.getElementById('comboItemsContainer');
     
     const btnAddReceta = document.getElementById('btnAddReceta');
     const recetasContainer = document.getElementById('recetasContainer');
@@ -321,51 +274,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleTipoProducto() {
         const val = tipoSelect.value;
         
-        if (val === 'combo') {
+        if (val === 'preparado') {
             divStock.classList.add('d-none');
             divCosto.classList.add('d-none');
             divPrecio.classList.remove('d-none');
-            divCombos.classList.remove('d-none');
-            divRecetas.classList.add('d-none');
-            if (divConversorOnzas) divConversorOnzas.classList.add('d-none');
-            
-            // Habilitar campos de combos y deshabilitar recetas
-            if (comboItemsContainer) {
-                comboItemsContainer.querySelectorAll('input, select').forEach(el => el.disabled = false);
-            }
-            if (recetasContainer) {
-                recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
-            }
-
-            // Auto-seleccionar la categoría oficial de Combos
-            const catSelect = document.getElementById('categoriaSelect');
-            if (catSelect) {
-                for (let i = 0; i < catSelect.options.length; i++) {
-                    if (catSelect.options[i].text.toLowerCase().includes('combo')) {
-                        catSelect.selectedIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            // Si el contenedor de combo está vacío, añadir 1 fila por defecto
-            if (comboItemsContainer && comboItemsContainer.children.length === 0) {
-                addComboRow();
-            }
-        } else if (val === 'preparado') {
-            divStock.classList.add('d-none');
-            divCosto.classList.add('d-none');
-            divPrecio.classList.remove('d-none');
-            divCombos.classList.add('d-none');
             divRecetas.classList.remove('d-none');
             if (divConversorOnzas) divConversorOnzas.classList.add('d-none');
             
-            // Habilitar recetas y deshabilitar combos
+            // Habilitar recetas
             if (recetasContainer) {
                 recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = false);
-            }
-            if (comboItemsContainer) {
-                comboItemsContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
             }
 
             if (recetasContainer && recetasContainer.children.length === 0) {
@@ -375,13 +293,9 @@ document.addEventListener('DOMContentLoaded', function() {
             divStock.classList.remove('d-none');
             divCosto.classList.remove('d-none');
             divPrecio.classList.add('d-none');
-            divCombos.classList.add('d-none');
             divRecetas.classList.add('d-none');
             if (divConversorOnzas) divConversorOnzas.classList.remove('d-none');
 
-            if (comboItemsContainer) {
-                comboItemsContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
-            }
             if (recetasContainer) {
                 recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
             }
@@ -390,13 +304,9 @@ document.addEventListener('DOMContentLoaded', function() {
             divStock.classList.remove('d-none');
             divCosto.classList.remove('d-none');
             divPrecio.classList.remove('d-none');
-            divCombos.classList.add('d-none');
             divRecetas.classList.add('d-none');
             if (divConversorOnzas) divConversorOnzas.classList.add('d-none');
 
-            if (comboItemsContainer) {
-                comboItemsContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
-            }
             if (recetasContainer) {
                 recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
             }
@@ -456,29 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function addComboRow() {
-        const row = document.createElement('div');
-        row.className = 'row g-2 mb-2 combo-line align-items-center bg-white p-2 rounded-3 border';
-        row.innerHTML = `
-            <div class="col-md-8 col-7">
-                <label class="form-label small text-muted mb-1">Producto</label>
-                <select name="combo_producto_id[]" class="form-select bg-light border-0 fw-bold">
-                    <option value="">Seleccionar Producto...</option>
-                    {% for prod in todos_productos %}
-                    <option value="{{ prod.id }}">{{ prod.nombre }} (SKU: {{ prod.sku }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3 col-3">
-                <label class="form-label small text-muted mb-1">Cantidad</label>
-                <input type="number" step="1" min="1" name="combo_cantidad[]" class="form-control bg-light border-0 text-center fw-bold" placeholder="Cant." value="1">
-            </div>
-            <div class="col-md-1 col-2 text-end pt-3">
-                <button type="button" class="btn btn-outline-danger btn-remove-combo-item rounded-circle" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
-            </div>
-        `;
-        comboItemsContainer.appendChild(row);
-    }
 
     function addRecetaRow() {
         const row = document.createElement('div');
@@ -504,16 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
         recetasContainer.appendChild(row);
     }
 
-    if (btnAddComboItem) btnAddComboItem.addEventListener('click', addComboRow);
     if (btnAddReceta) btnAddReceta.addEventListener('click', addRecetaRow);
-
-    if (comboItemsContainer) {
-        comboItemsContainer.addEventListener('click', function(e) {
-            if (e.target.closest('.btn-remove-combo-item')) {
-                e.target.closest('.combo-line').remove();
-            }
-        });
-    }
 
     if (recetasContainer) {
         recetasContainer.addEventListener('click', function(e) {
@@ -553,16 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const val = tipoSelect.value;
-            if (val === 'combo') {
-                const selects = comboItemsContainer.querySelectorAll('select[name="combo_producto_id[]"]');
-                let valid = false;
-                selects.forEach(s => { if (s.value) valid = true; });
-                if (!valid) {
-                    e.preventDefault();
-                    alert('⚠️ Debes seleccionar al menos un producto para armar el combo.');
-                    return false;
-                }
-            } else if (val === 'preparado') {
+            if (val === 'preparado') {
                 const selects = recetasContainer.querySelectorAll('select[name="receta_insumo_id[]"]');
                 let valid = false;
                 selects.forEach(s => { if (s.value) valid = true; });
@@ -573,10 +442,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Habilitar todos los inputs relevantes antes del envío
+            // Mostrar estado de carga sin reemplazar el DOM directamente de forma síncrona
             const btnSubmit = document.getElementById('btnSubmitProduct');
             if (btnSubmit) {
-                btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Guardando...';
+                setTimeout(() => {
+                    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Guardando...';
+                    btnSubmit.disabled = true;
+                }, 50);
             }
         });
     }

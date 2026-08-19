@@ -51,24 +51,24 @@ def guardar_imagen(file):
 
 def asegurar_categoria_combos():
     """Garantiza la existencia de la categoría oficial de Combos y reasigna combos huérfanos o mal asignados."""
-    cat_combos = Categoria.query.filter(Categoria.nombre.ilike('%combo%')).first()
-    if not cat_combos:
-        cat_combos = Categoria(nombre="Combos")
-        db.session.add(cat_combos)
+    cat = Categoria.query.filter(Categoria.nombre.ilike('%combo%')).first()
+    if not cat:
+        cat = Categoria(nombre='Combos', descripcion='Categoría de combos')
+        db.session.add(cat)
         db.session.commit()
-    elif cat_combos.nombre != 'Combos':
-        cat_combos.nombre = 'Combos'
+    elif cat.nombre != 'Combos':
+        cat.nombre = 'Combos'
         db.session.commit()
     # Asegurar que todos los productos de tipo 'combo' pertenezcan exclusivamente a esta categoría
     combos_mal_asignados = Product.query.filter(
         Product.tipo_producto == 'combo',
-        (Product.categoria_id == None) | (Product.categoria_id != cat_combos.id)
+        (Product.categoria_id == None) | (Product.categoria_id != cat.id)
     ).all()
     if combos_mal_asignados:
         for cb in combos_mal_asignados:
-            cb.categoria_id = cat_combos.id
+            cb.categoria_id = cat.id
         db.session.commit()
-    return cat_combos
+    return cat
 
 import math
 
