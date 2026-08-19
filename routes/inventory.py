@@ -53,7 +53,7 @@ def asegurar_categoria_combos():
     """Garantiza la existencia de la categoría oficial de Combos y reasigna combos huérfanos o mal asignados."""
     cat = Categoria.query.filter(Categoria.nombre.ilike('%combo%')).first()
     if not cat:
-        cat = Categoria(nombre='Combos', descripcion='Categoría de combos')
+        cat = Categoria(nombre='Combos')
         db.session.add(cat)
         db.session.commit()
     elif cat.nombre != 'Combos':
