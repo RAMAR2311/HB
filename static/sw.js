@@ -1,10 +1,12 @@
-const CACHE_NAME = 'harry-beer-v1';
+const CACHE_NAME = 'harry-beer-v2';
 const ASSETS = [
     '/',
     '/offline',
     '/static/css/style.css',
     '/static/img/logo.png',
     '/static/img/icon-152x152.png',
+    '/static/img/icon-192x192.png',
+    '/static/img/icon-512x512.png',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js'
