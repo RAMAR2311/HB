@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-0 px-md-2 mb-5">
+    <!-- Header Superior -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main);">
+                <i class="fa-solid fa-truck-ramp-box fs-3" style="color: var(--color-secondary);"></i>
+            </div>
+            <div>
+                <h3 class="fw-extrabold text-dark m-0 font-heading" style="letter-spacing: -0.02em;">Ingreso de Mercancía & Stock</h3>
+                <p class="text-muted small m-0 font-body">Recepción de mercancía, reabastecimiento y vinculación automática con proveedores</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <a href="/tables/mapa" class="btn btn-hb-secondary px-3 py-2 fw-bold font-heading shadow-sm">
+                <i class="fa-solid fa-cash-register me-1"></i> Ir al Terminal POS
+            </a>
+        </div>
+    </div>
+
+    <!-- Pestañas de Modo: Reabastecer Existente vs Nuevo Producto -->
+    <div class="card p-0 bg-white shadow-sm overflow-hidden mb-4" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-radius: 16px;">
+        <div class="p-3 border-bottom" style="background-color: var(--color-bg-main);">
+            <ul class="nav nav-pills gap-2" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold font-heading px-4 py-2 rounded-pill" id="tab-existente" data-bs-toggle="pill" data-bs-target="#panel-existente" type="button" role="tab">
+                        <i class="fa-solid fa-boxes-packing me-1"></i> 1. Reabastecer Producto Existente
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold font-heading px-4 py-2 rounded-pill text-dark border bg-white" id="tab-nuevo" data-bs-toggle="pill" data-bs-target="#panel-nuevo" type="button" role="tab">
+                        <i class="fa-solid fa-plus-circle me-1 text-primary"></i> 2. Ingresar Nuevo Producto al Catálogo
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="tab-content" id="pills-tabContent">
+                <!-- ══════════════════ TAB 1: REABASTECER EXISTENTE ══════════════════ -->
+                <div class="tab-pane fade show active" id="panel-existente" role="tabpanel">
+                    <form method="POST" action="{{ url_for('inventory_bp.ingreso_mercancia') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="modo" value="existente"/>
+
+                        <div class="row g-3">
+                            <!-- Selección de Producto -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-dark font-heading">
+                                    PRODUCTO A REABASTECER <span class="text-danger">*</span>
+                                </label>
+                                <select name="product_id" id="selectProductoExistente" class="form-select bg-light border-0 py-2 fw-semibold text-dark shadow-none" required onchange="actualizarCostoReferencia(this)">
+                                    <option value="" selected disabled>-- Selecciona el producto del inventario --</option>
+                                    {% for p in productos %}
+                                    <option value="{{ p.id }}" data-costo="{{ p.precio_costo or 0 }}" data-stock="{{ p.total_stock }}">
+                                        {{ p.nombre }} {% if p.sku %}(SKU: {{ p.sku }}){% endif %} - Stock actual: {{ p.total_stock }} uds
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted" style="font-size: 0.72rem;">Selecciona el producto que recibiste físicamente en el local.</small>
+                            </div>
+
+                            <!-- Cantidad que ingresa -->
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark font-heading">
+                                    CANTIDAD RECIBIDA <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" min="1" step="1" name="cantidad" id="inputCantidad" class="form-control font-mono fw-extrabold fs-5 bg-light border-0" placeholder="0" required oninput="calcularTotalFactura()">
+                                    <span class="input-group-text bg-light border-0 fw-bold font-mono">UDS</span>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.72rem;">Unidades a sumar al stock.</small>
+                            </div>
+
+                            <!-- Costo Unitario de Compra -->
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark font-heading">
+                                    COSTO UNITARIO ($) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0 fw-bold">$</span>
+                                    <input type="number" min="0" step="any" name="precio_costo" id="inputCostoUnitario" class="form-control font-mono fw-bold fs-5 bg-light border-0" placeholder="0" required oninput="calcularTotalFactura()">
+                                </div>
+                                <small class="text-muted" style="font-size: 0.72rem;">Costo de compra por unidad.</small>
+                            </div>
+
+                            <!-- Sección Proveedor y Cuenta por Pagar -->
+                            <div class="col-12 mt-4">
+                                <div class="p-3 rounded-3 bg-light border">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                        <h6 class="fw-bold text-dark font-heading m-0 d-flex align-items-center gap-2">
+                                            <i class="fa-solid fa-truck text-secondary"></i> Vinculación con Proveedor y Cuenta Corriente
+                                        </h6>
+                                        <span class="badge bg-secondary text-white font-mono" style="font-size: 0.72rem;">Opcional</span>
+                                    </div>
+
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-md-5">
+                                            <label class="form-label fw-bold small text-dark">Proveedor</label>
+                                            <select name="provider_id" class="form-select bg-white border">
+                                                <option value="">-- Sin proveedor / Pago al contado directo --</option>
+                                                {% for prov in proveedores %}
+                                                <option value="{{ prov.id }}">{{ prov.nombre }}{% if prov.empresa %} ({{ prov.empresa }}){% endif %}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">N° Factura / Remisión</label>
+                                            <input type="text" name="numero_factura_proveedor" class="form-control bg-white font-mono" placeholder="Ej: FAC-4921">
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-check pt-3">
+                                                <input class="form-check-input" type="checkbox" name="cargar_factura_proveedor" id="chkCargarExistente" value="1" checked>
+                                                <label class="form-check-label small fw-bold text-dark font-heading" for="chkCargarExistente">
+                                                    Cargar a cuenta corriente
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                        <span class="small text-muted">Total a Facturar al Proveedor:</span>
+                                        <span class="font-mono fw-extrabold text-success fs-5" id="lblTotalFactura">$0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notas -->
+                            <div class="col-12 mt-3">
+                                <label class="form-label fw-bold small text-dark font-heading">OBSERVACIONES / NOTAS DE RECEPCIÓN</label>
+                                <textarea name="observacion" rows="2" class="form-control bg-light border-0 font-body" placeholder="Ej: Recibido por turno tarde, cajas selladas..."></textarea>
+                            </div>
+
+                            <!-- Botón Enviar -->
+                            <div class="col-12 mt-4 text-end">
+                                <button type="submit" class="btn btn-hb-secondary rounded-pill px-5 py-2 fw-bold font-heading shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Entrada de Stock
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ══════════════════ TAB 2: INGRESAR NUEVO PRODUCTO ══════════════════ -->
+                <div class="tab-pane fade" id="panel-nuevo" role="tabpanel">
+                    <form method="POST" action="{{ url_for('inventory_bp.ingreso_mercancia') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="modo" value="nuevo"/>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-dark font-heading">NOMBRE DEL PRODUCTO <span class="text-danger">*</span></label>
+                                <input type="text" name="nombre" class="form-control bg-light border-0 fw-bold" placeholder="Ej: Cerveza Heineken 330ml, Tequila José Cuervo..." required>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark font-heading">CÓDIGO / SKU</label>
+                                <input type="text" name="sku" class="form-control bg-light border-0 font-mono" placeholder="Ej: CERV-HEIN-01">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark font-heading">CATEGORÍA</label>
+                                <select name="categoria_id" class="form-select bg-light border-0">
+                                    <option value="">Seleccionar categoría...</option>
+                                    {% for cat in categorias %}
+                                    <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark font-heading">TIPO DE ÍTEM</label>
+                                <select name="tipo_producto" class="form-select bg-light border-0">
+                                    <option value="producto_simple" selected>🍺 Producto Directo (Botella / Lata)</option>
+                                    <option value="insumo">🌿 Insumo / Materia Prima</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark font-heading">STOCK INICIAL RECIBIDO <span class="text-danger">*</span></label>
+                                <input type="number" min="0" step="1" name="cantidad_stock" class="form-control font-mono fw-extrabold fs-5 bg-light border-0" placeholder="0" required>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark font-heading">COSTO UNITARIO ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0 fw-bold">$</span>
+                                    <input type="number" min="0" step="any" name="precio_costo" class="form-control font-mono fw-bold fs-5 bg-light border-0" placeholder="0">
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-dark font-heading">PRECIO VENTA AL PÚBLICO ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0 fw-bold">$</span>
+                                    <input type="number" min="0" step="any" name="precio_sugerido" class="form-control font-mono fw-bold fs-5 bg-light border-0" placeholder="0">
+                                </div>
+                            </div>
+
+                            <!-- Sección Proveedor y Cuenta por Pagar -->
+                            <div class="col-12 mt-4">
+                                <div class="p-3 rounded-3 bg-light border">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                        <h6 class="fw-bold text-dark font-heading m-0 d-flex align-items-center gap-2">
+                                            <i class="fa-solid fa-truck text-secondary"></i> Vinculación con Proveedor y Cuenta Corriente
+                                        </h6>
+                                        <span class="badge bg-secondary text-white font-mono" style="font-size: 0.72rem;">Opcional</span>
+                                    </div>
+
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-md-5">
+                                            <label class="form-label fw-bold small text-dark">Proveedor</label>
+                                            <select name="provider_id" class="form-select bg-white border">
+                                                <option value="">-- Sin proveedor / Pago directo --</option>
+                                                {% for prov in proveedores %}
+                                                <option value="{{ prov.id }}">{{ prov.nombre }}{% if prov.empresa %} ({{ prov.empresa }}){% endif %}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">N° Factura / Remisión</label>
+                                            <input type="text" name="numero_factura_proveedor" class="form-control bg-white font-mono" placeholder="Ej: FAC-9821">
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-check pt-3">
+                                                <input class="form-check-input" type="checkbox" name="cargar_factura_proveedor" id="chkCargarNuevo" value="1" checked>
+                                                <label class="form-check-label small fw-bold text-dark font-heading" for="chkCargarNuevo">
+                                                    Cargar a cuenta corriente
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-3">
+                                <label class="form-label fw-bold small text-dark font-heading">NOTAS ADICIONALES</label>
+                                <textarea name="observacion" rows="2" class="form-control bg-light border-0 font-body" placeholder="Notas sobre presentación, proveedor, etc."></textarea>
+                            </div>
+
+                            <div class="col-12 mt-4 text-end">
+                                <button type="submit" class="btn btn-hb-secondary rounded-pill px-5 py-2 fw-bold font-heading shadow-sm">
+                                    <i class="fa-solid fa-plus-circle me-1"></i> Crear y Registrar Ingreso
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Entradas Registradas Hoy por este Usuario -->
+    <div class="card p-0 bg-white shadow-sm overflow-hidden" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-radius: 16px;">
+        <div class="p-3 d-flex justify-content-between align-items-center border-bottom" style="background-color: var(--color-bg-main);">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-clipboard-list fs-5" style="color: var(--color-secondary);"></i>
+                <h5 class="fw-extrabold text-dark m-0 font-heading">Mis Ingresos de Mercancía Registrados Hoy</h5>
+            </div>
+            <span class="badge bg-dark text-warning font-mono">{{ ajustes_hoy|length }} Entradas</span>
+        </div>
+
+        <div class="table-responsive p-0">
+            <table class="table table-hover align-middle m-0">
+                <thead style="background-color: var(--color-secondary); color: #FFFFFF;">
+                    <tr>
+                        <th class="ps-3 text-white font-heading" style="font-size: 0.78rem;">HORA</th>
+                        <th class="text-white font-heading" style="font-size: 0.78rem;">PRODUCTO</th>
+                        <th class="text-center text-white font-heading" style="font-size: 0.78rem;">TIPO DE ENTRADA</th>
+                        <th class="text-center text-white font-heading" style="font-size: 0.78rem;">STOCK ANTERIOR</th>
+                        <th class="text-center text-white font-heading" style="font-size: 0.78rem;">NUEVO STOCK</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aj in ajustes_hoy %}
+                    <tr>
+                        <td class="ps-3 py-3 font-mono text-muted small">
+                            <i class="fa-regular fa-clock me-1"></i>{{ aj.fecha_ajuste.strftime('%I:%M %p') }}
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark font-heading">{{ aj.producto_rel.nombre if aj.producto_rel else 'Producto Eliminado' }}</div>
+                            {% if aj.producto_rel and aj.producto_rel.sku %}
+                            <small class="text-muted font-mono">SKU: {{ aj.producto_rel.sku }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-success bg-opacity-15 text-success border border-success rounded-pill px-3 py-1 font-mono">
+                                {{ aj.tipo_movimiento }}
+                            </span>
+                        </td>
+                        <td class="text-center font-mono text-muted">
+                            {{ aj.stock_anterior }} uds
+                        </td>
+                        <td class="text-center font-mono fw-extrabold text-dark fs-6">
+                            {{ aj.stock_nuevo }} uds
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-truck-loading fs-2 mb-2 opacity-25"></i>
+                            <p class="small m-0">No has registrado ingresos de mercancía en el turno de hoy.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function actualizarCostoReferencia(selectEl) {
+        const selectedOpt = selectEl.options[selectEl.selectedIndex];
+        if (selectedOpt) {
+            const costo = selectedOpt.getAttribute('data-costo');
+            if (costo && parseFloat(costo) > 0) {
+                document.getElementById('inputCostoUnitario').value = parseFloat(costo).toFixed(0);
+            }
+            calcularTotalFactura();
+        }
+    }
+
+    function calcularTotalFactura() {
+        const cant = parseFloat(document.getElementById('inputCantidad').value || 0);
+        const costo = parseFloat(document.getElementById('inputCostoUnitario').value || 0);
+        const total = cant * costo;
+        const formatted = '$' + total.toLocaleString('es-CO');
+        const lbl = document.getElementById('lblTotalFactura');
+        if (lbl) lbl.textContent = formatted;
+    }
+</script>
+{% endblock %}

@@ -1,112 +1,189 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
-        <!-- Título con acento Azul Turquesa -->
-        <h2 class="fw-bolder m-0" style="color: var(--brand-yellow);">
-            <i class="fa-solid fa-list-check me-2"></i>Ventas del Día
-        </h2>
+<div class="container-fluid px-0 px-md-2 mb-5">
+    <!-- Header Superior -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main);">
+                <i class="fa-solid fa-list-check fs-3" style="color: var(--color-secondary);"></i>
+            </div>
+            <div>
+                <h3 class="fw-extrabold text-dark m-0 font-heading" style="letter-spacing: -0.02em;">Ventas del Turno (En Curso)</h3>
+                <p class="text-muted small m-0 font-body">Registro en tiempo real de transacciones del 
+                    <strong class="font-mono text-dark">Turno #{{ turno.numero_turno if turno else 'Ninguno' }}</strong>
+                </p>
+            </div>
+        </div>
+
         <div class="d-flex align-items-center gap-2">
-            <a href="/sales/nueva" class="btn btn-light rounded-pill px-4 fw-bold text-muted border shadow-sm">
-                <i class="fa-solid fa-arrow-left me-1"></i> Módulo de Caja
+            <a href="/tables/mapa" class="btn btn-hb-secondary px-3 py-2 fw-bold font-heading shadow-sm">
+                <i class="fa-solid fa-cash-register me-1"></i> Abrir Terminal POS
             </a>
         </div>
     </div>
 
-    <!-- UI: Resumen Financiero Rápido de Hoy -->
-    <div class="col-6 col-md-4 mb-3">
-        <div class="card card-custom h-100" style="border-left: 6px solid var(--brand-yellow) !important;">
-            <div class="card-body py-3 ps-3">
-                <p class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.75rem;"><i class="fa-solid fa-money-bills me-1"></i> Efectivo Hoy</p>
-                <h4 class="fw-bolder m-0" style="color: var(--brand-yellow);">${{ (total_efectivo)|cop }}</h4>
+    <!-- 1. RESUMEN FINANCIERO CON TARJETAS POR MÉTODO DE PAGO -->
+    <div class="row g-3 mb-4">
+        <!-- 1. 💵 Efectivo -->
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #16A34A !important; border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">EFECTIVO</small>
+                    <span class="badge bg-success bg-opacity-15 text-success rounded-circle p-1"><i class="fa-solid fa-money-bill-wave"></i></span>
+                </div>
+                <h4 class="fw-extrabold text-success font-mono my-1">${{ (total_efectivo)|cop }}</h4>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">Caja hoy</small>
             </div>
         </div>
-    </div>
-    
-    <div class="col-6 col-md-4 mb-3">
-        <div class="card card-custom h-100" style="border-left: 6px solid var(--brand-orange) !important;">
-            <div class="card-body py-3 ps-3">
-                <p class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.75rem;"><i class="fa-solid fa-mobile-button me-1"></i> Transf. Hoy</p>
-                <h4 class="fw-bolder m-0" style="color: var(--brand-orange);">${{ (total_transferencias)|cop }}</h4>
+
+        <!-- 2. 📱 Nequi -->
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #6F42C1 !important; border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">NEQUI</small>
+                    <span class="badge rounded-circle p-1" style="background-color: #EDE9FE; color: #6F42C1;"><i class="fa-solid fa-mobile-screen-button"></i></span>
+                </div>
+                <h4 class="fw-extrabold font-mono my-1" style="color: #6F42C1;">${{ (total_nequi)|cop }}</h4>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">Transferencias QR</small>
+            </div>
+        </div>
+
+        <!-- 3. 📱 Daviplata -->
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #DC2626 !important; border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">DAVIPLATA</small>
+                    <span class="badge rounded-circle p-1" style="background-color: #FEE2E2; color: #DC2626;"><i class="fa-solid fa-mobile-screen"></i></span>
+                </div>
+                <h4 class="fw-extrabold text-danger font-mono my-1">${{ (total_daviplata)|cop }}</h4>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">Billetera móvil</small>
+            </div>
+        </div>
+
+        <!-- 4. 🔑 Llave (Bre-B / Transferencia) -->
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #D97706 !important; border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">LLAVE (BRE-B / TRANSF.)</small>
+                    <span class="badge rounded-circle p-1" style="background-color: #FEF3C7; color: #D97706;"><i class="fa-solid fa-key"></i></span>
+                </div>
+                <h4 class="fw-extrabold font-mono my-1" style="color: #D97706;">${{ (total_llave)|cop }}</h4>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">Bancos / Bre-B</small>
+            </div>
+        </div>
+
+        <!-- 5. 💳 Datáfono (Tarjeta Débito/Crédito) -->
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #2563EB !important; border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">DATÁFONO (TARJETAS)</small>
+                    <span class="badge rounded-circle p-1" style="background-color: #DBEAFE; color: #2563EB;"><i class="fa-solid fa-credit-card"></i></span>
+                </div>
+                <h4 class="fw-extrabold text-primary font-mono my-1">${{ (total_datafono)|cop }}</h4>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">Débito / Crédito</small>
+            </div>
+        </div>
+
+        <!-- 6. 💰 TOTAL GENERAL DEL DÍA -->
+        <div class="col-12 col-sm-6 col-xl-2">
+            <div class="card p-3 h-100 text-white" style="background-color: var(--color-text-main); border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-secondary); border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-warning fw-bold font-heading" style="font-size: 0.72rem;">TOTAL DEL TURNO</small>
+                    <i class="fa-solid fa-scale-balanced text-warning"></i>
+                </div>
+                <h4 class="fw-extrabold text-white font-mono my-1">${{ (total_general)|cop }}</h4>
+                <small class="text-white-50 font-mono" style="font-size: 0.7rem;">{{ ventas|length }} ventas registradas</small>
             </div>
         </div>
     </div>
 
-    <div class="col-12 col-md-4 mb-3">
-        <div class="card card-custom h-100 bg-light">
-            <div class="card-body py-3 ps-3 text-center d-flex flex-column justify-content-center">
-                <p class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.75rem;">Total Facturado Hoy</p>
-                <h3 class="fw-bolder text-brand-black m-0">${{ (total_efectivo + total_transferencias)|cop }}</h3>
+    <!-- 2. TABLA DE VENTAS DEL TURNO -->
+    <div class="card p-0 overflow-hidden bg-white shadow-sm" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-radius: 16px;">
+        <div class="p-3 d-flex justify-content-between align-items-center border-bottom" style="background-color: var(--color-bg-main);">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-receipt fs-5" style="color: var(--color-secondary);"></i>
+                <h5 class="fw-extrabold text-dark m-0 font-heading">Transacciones Emitidas Hoy</h5>
             </div>
+            <span class="badge bg-dark text-warning font-mono">{{ ventas|length }} Tickets</span>
         </div>
-    </div>
-</div>
 
-<div class="card card-custom p-0 overflow-hidden shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover table-striped table-custom mb-0">
-            <thead class="bg-light">
-                <tr>
-                    <th width="120">N° TIPO</th>
-                    <th>HORA DE COBRO</th>
-                    <th>VENDEDOR RESPONSABLE</th>
-                    <th class="text-center">VÍA DE PAGO</th>
-                    <th class="text-end" width="160">IMPORTE CERRADO</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for venta in ventas %}
-                <tr>
-                    <td class="fw-bold text-brand-black align-middle">Ticket #{{ "%05d"|format(venta.id) }}</td>
-                    <td class="align-middle text-muted"><i class="fa-regular fa-clock text-brand-orange me-1"></i> {{ venta.fecha_venta.strftime('%H:%M') }}</td>
-                    <td class="align-middle fw-semibold text-brand-black">
-                        <i class="fa-solid fa-user-circle text-muted me-1"></i> {{ venta.vendedor.nombre }}
-                    </td>
-                    <td class="text-center align-middle">
-                        {% if venta.pagos|length > 1 %}
-                            <span class="badge bg-light text-dark border border-warning border-opacity-50 rounded-pill px-3 py-2" 
-                                  data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="left"
-                                  title="{% for p in venta.pagos %}{{ p.metodo_pago|capitalize }}: ${{ (p.monto)|cop }}{% if not loop.last %}<br>{% endif %}{% endfor %}"
-                                  style="cursor: help;">
-                                <i class="fa-solid fa-arrows-split-up-and-left me-1" style="color: #fd7e14;"></i> Pago Mixto
-                            </span>
-                        {% elif venta.pagos|length == 1 %}
-                            {% set metodo = venta.pagos[0].metodo_pago %}
-                            {% if metodo == 'efectivo' %}
-                                <span class="badge bg-light text-success border border-success border-opacity-25 rounded-pill px-3 py-2"><i class="fa-solid fa-money-bills me-1"></i> Efectivo</span>
+        <div class="table-responsive p-0">
+            <table class="table table-hover align-middle m-0">
+                <thead style="background-color: var(--color-secondary); color: #FFFFFF;">
+                    <tr>
+                        <th class="ps-3 text-white font-heading" style="font-size: 0.78rem;">TICKET / HORA</th>
+                        <th class="text-white font-heading" style="font-size: 0.78rem;">ATENDIDO POR / MESA</th>
+                        <th class="text-white font-heading" style="font-size: 0.78rem;">VÍA DE PAGO (DESGLOSE)</th>
+                        <th class="text-end pe-3 text-white font-heading" style="font-size: 0.78rem;">TOTAL COBRADO</th>
+                        <th class="text-center text-white font-heading" style="font-size: 0.78rem; width: 130px;">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venta in ventas %}
+                    <tr>
+                        <td class="ps-3 py-3 font-mono">
+                            <span class="badge bg-dark text-warning fw-bold">#{{ "%05d"|format(venta.id) }}</span>
+                            <div class="text-muted small mt-1 font-mono">
+                                <i class="fa-regular fa-clock me-1"></i>{{ venta.fecha_venta.strftime('%I:%M %p') }}
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="fw-bold text-dark font-heading">{{ venta.vendedor.nombre }}</div>
+                            {% if venta.mesa %}
+                            <span class="badge bg-light text-dark border font-mono mt-1">{{ venta.mesa.nombre }}</span>
                             {% else %}
-                                <span class="badge bg-light text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2"><i class="fa-solid fa-building-columns me-1"></i> {{ metodo|capitalize }}</span>
+                            <span class="badge bg-light text-muted border font-mono mt-1">Barra Directa</span>
                             {% endif %}
-                        {% else %}
-                            <!-- Fallback retrocompatibilidad -->
-                            <span class="badge bg-light text-dark border rounded-pill px-3 py-2">{{ venta.metodo_pago|capitalize }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-end align-middle fw-bolder text-brand-black fs-5 pe-4">
-                        ${{ (venta.monto_total)|cop }}
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5" class="text-center py-5">
-                        <i class="fa-solid fa-store-slash fs-1 mb-3" style="color: var(--brand-orange);"></i>
-                        <h4 class="text-brand-black fw-bold">No hay ventas registradas el día de hoy</h4>
-                        <p class="text-muted mb-0">Cada día este registro inicia limpio desde cero.</p>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+
+                        <td>
+                            {% if venta.pagos and venta.pagos|length > 1 %}
+                                <span class="badge bg-warning bg-opacity-25 text-dark border border-warning rounded-pill px-2 py-1 font-heading mb-1" style="font-size: 0.75rem;">
+                                    <i class="fa-solid fa-arrows-split-up-and-left me-1" style="color: #D97706;"></i> Pago Mixto
+                                </span>
+                                <div class="d-flex flex-column gap-1 mt-1">
+                                    {% for p in venta.pagos %}
+                                    <div class="small font-mono text-muted">
+                                        • {{ p.metodo_pago|capitalize }}: <strong class="text-dark">${{ (p.monto)|cop }}</strong>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% elif venta.pagos and venta.pagos|length == 1 %}
+                                {% set m = venta.pagos[0].metodo_pago %}
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-1 font-heading">
+                                    {{ m|capitalize }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-1 font-heading">
+                                    {{ venta.metodo_pago|capitalize if venta.metodo_pago else 'Efectivo' }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-end pe-3 font-mono fw-extrabold text-dark fs-5">
+                            ${{ (venta.monto_total)|cop }}
+                        </td>
+
+                        <td class="text-center">
+                            <a href="{{ url_for('sales_bp.imprimir_ticket', sale_id=venta.id) }}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold font-heading" style="border: 1.5px solid var(--color-text-main);">
+                                <i class="fa-solid fa-receipt me-1 text-primary"></i> Recibo
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-cash-register fs-1 mb-3 opacity-25"></i>
+                            <h5 class="fw-bold text-dark font-heading">No se han emitido ventas hoy</h5>
+                            <p class="small m-0">Las ventas facturadas en el turno aparecerán aquí en vivo.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (el) {
-            return new bootstrap.Tooltip(el);
-        });
-    });
-</script>
 {% endblock %}

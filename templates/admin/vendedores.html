@@ -1,108 +1,309 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row mb-5">
-    <div class="col-12 d-flex justify-content-between align-items-center">
-        <!-- Título con acento Azul Turquesa según reglas de Branding (.text-brand-yellow es #A3D8DE) -->
-        <h2 class="fw-bolder m-0" style="color: var(--brand-yellow);">
-            <i class="fa-solid fa-users-gear me-2"></i>Gestión de Personal
-        </h2>
-        <a href="/admin/dashboard" class="btn btn-light rounded-pill px-4 fw-bold text-muted border shadow-sm">
-            <i class="fa-solid fa-arrow-left me-1"></i> Panel Principal
+<!-- Header y Métricas Rápidas -->
+<div class="row g-3 align-items-center mb-4">
+    <div class="col-lg-6">
+        <div class="d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4" style="background-color: var(--color-surface); border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main);">
+                <i class="fa-solid fa-users-gear fs-3" style="color: var(--color-secondary);"></i>
+            </div>
+            <div>
+                <h3 class="fw-extrabold text-dark m-0 font-heading" style="letter-spacing: -0.02em;">Personal & Horarios</h3>
+                <p class="text-muted small m-0">Control de nómina operativa, turnos y restricción de horarios (Bogotá, Colombia).</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 text-lg-end">
+        <a href="/admin/dashboard" class="btn btn-outline-dark rounded-3 px-4 py-2 fw-bold me-2 font-heading" style="border: 2px solid var(--color-text-main);">
+            <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+        </a>
+        <a href="/liquidaciones" class="btn btn-hb-secondary px-4 py-2">
+            <i class="fa-solid fa-hand-holding-dollar me-1"></i> Liquidaciones
         </a>
     </div>
 </div>
 
+<!-- Métricas de Personal -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="p-3 rounded-3 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-secondary) !important;">
+            <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.72rem;">TOTAL PERSONAL</small>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+                <span class="fs-4 fw-extrabold text-dark font-mono">{{ vendedores|length }}</span>
+                <i class="fa-solid fa-users fs-4 opacity-50" style="color: var(--color-secondary);"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 rounded-3 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #16A34A !important;">
+            <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.72rem;">ACTIVOS</small>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+                <span class="fs-4 fw-extrabold text-success font-mono">{{ vendedores|selectattr('activo', 'equalto', true)|list|length }}</span>
+                <i class="fa-solid fa-user-check text-success fs-4 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 rounded-3 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-primary) !important;">
+            <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.72rem;">DESACTIVADOS</small>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+                <span class="fs-4 fw-extrabold font-mono" style="color: var(--color-primary);">{{ vendedores|selectattr('activo', 'equalto', false)|list|length }}</span>
+                <i class="fa-solid fa-user-xmark fs-4 opacity-50" style="color: var(--color-primary);"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 rounded-3 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-accent) !important;">
+            <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.72rem;">HORARIO ASIGNADO</small>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+                <span class="fs-4 fw-extrabold text-dark font-mono">{{ vendedores|selectattr('horario_restringido', 'equalto', true)|list|length }}</span>
+                <i class="fa-solid fa-clock fs-4 opacity-75" style="color: var(--color-accent);"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4 mb-5">
-    <!-- Columna Izquierda: Formulario (Card en Blanco Sólido) -->
-    <div class="col-md-4">
-        <div class="card card-custom p-4 h-100">
-            <h5 class="fw-bold text-brand-black mb-4"><i class="fa-solid fa-id-badge me-2 text-brand-orange"></i> Alta de Nuevo Vendedor</h5>
-            <form method="POST">
-                <!-- Autenticador Estricto para el Servidor Jinja -->
+    <!-- Columna Izquierda: Formulario de Alta -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card card-custom p-4 shadow-sm bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                <h5 class="fw-extrabold text-dark m-0"><i class="fa-solid fa-user-plus me-2 text-warning"></i> Nuevo Empleado</h5>
+                <span class="badge bg-light text-dark border">Registro</span>
+            </div>
+
+            <form method="POST" action="{{ url_for('admin_bp.vendedores') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
                 <div class="mb-3">
-                    <label class="form-label text-brand-black fw-semibold small">Nombre Completo</label>
-                    <input type="text" name="nombre" class="form-control bg-light border-0 py-2" required placeholder="Ej. Ana Pérez">
+                    <label class="form-label text-dark fw-bold small mb-1">Nombre Completo <span class="text-danger">*</span></label>
+                    <input type="text" name="nombre" class="form-control bg-light border-0 py-2 fw-semibold" required placeholder="Ej. Carlos Mendoza">
                 </div>
                 
                 <div class="mb-3">
-                    <label class="form-label text-brand-black fw-semibold small">Correo Empresarial (Login)</label>
-                    <input type="email" name="email" class="form-control bg-light border-0 py-2" required placeholder="ventas@elgoldy.com">
+                    <label class="form-label text-dark fw-bold small mb-1">Correo de Acceso (Login) <span class="text-danger">*</span></label>
+                    <input type="email" name="email" class="form-control bg-light border-0 py-2 fw-semibold" required placeholder="carlos@harrybeer.com">
                 </div>
                 
-                <div class="mb-3">
-                    <label class="form-label text-brand-black fw-semibold small">Celular / Móvil de Contacto</label>
-                    <input type="text" name="telefono" class="form-control bg-light border-0 py-2" placeholder="Ej. 300 123 4567">
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label text-brand-black fw-semibold small">Asignar Rol / Perfil de Usuario</label>
-                    <select name="rol" class="form-select bg-light border-0 py-2" required>
-                        <option value="vendedor">Vendedor (Cajas/Tienda)</option>
-                        <option value="bodega">Encargado de Bodega (Admin de Bodega)</option>
-                        <option value="vendedor_bodega">Vendedor de Bodega (Facturación)</option>
-                    </select>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label text-dark fw-bold small mb-1">Teléfono / Celular</label>
+                        <input type="text" name="telefono" class="form-control bg-light border-0 py-2" placeholder="Ej. 300 123 4567">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-dark fw-bold small mb-1">Rol / Cargo <span class="text-danger">*</span></label>
+                        <select name="rol" class="form-select bg-light border-0 py-2 fw-bold" required>
+                            <option value="mesero">Mesero(a)</option>
+                            <option value="cajero" selected>Cajero(a) / POS</option>
+                            <option value="vendedor">Vendedor / Barra</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label text-brand-black fw-semibold small">Contraseña (PIN)</label>
-                    <input type="password" name="password" class="form-control bg-light border-0 py-2" required placeholder="••••••••">
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-bold small mb-1">Contraseña (PIN / Clave) <span class="text-danger">*</span></label>
+                    <input type="password" name="password" class="form-control bg-light border-0 py-2 fw-semibold" required placeholder="••••••••">
                 </div>
-                
-                <div class="d-grid mt-auto">
-                    <!-- Sólida Llamada a la Acción (Azul Turquesa según Identidad Gráfica) -->
-                    <button type="submit" class="btn btn-yellow py-3 fw-bold text-brand-black rounded-3 shadow-sm text-uppercase">
-                        <i class="fa-solid fa-user-plus me-1"></i> Otorgar Acceso
-                    </button>
+
+                <!-- Configuración de Horario Laboral -->
+                <div class="p-3 bg-light rounded-4 border mb-4">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="horario_restringido" id="chkHorarioRestringidoAlta" onchange="togglePanelHorarioAlta(this.checked)">
+                        <label class="form-check-label fw-extrabold text-dark small" for="chkHorarioRestringidoAlta">
+                            ⏱️ Restringir Horario de Acceso
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mb-3" style="font-size: 0.78rem;">Si está activado, solo podrá entrar al sistema en el horario y días autorizados (Hora Colombia).</small>
+
+                    <div id="panelHorarioAlta" style="display: none;">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-dark mb-1">Hora Inicio</label>
+                                <input type="time" name="hora_inicio" id="hora_inicio_alta" class="form-control form-control-sm bg-white border fw-bold" value="16:00">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-dark mb-1">Hora Fin</label>
+                                <input type="time" name="hora_fin" id="hora_fin_alta" class="form-control form-control-sm bg-white border fw-bold" value="05:00">
+                            </div>
+                        </div>
+                        <div class="alert alert-info py-1 px-2 small mb-2" style="font-size: 0.74rem;">
+                            <i class="fa-solid fa-moon me-1 text-primary"></i> <b>Turnos nocturnos:</b> Si la hora fin es menor (ej. 5:00 AM), el sistema sabe que el turno termina al día siguiente.
+                        </div>
+
+                        <label class="form-label small fw-bold text-dark mb-1">Días Laborales Permitidos:</label>
+                        <div class="d-flex flex-wrap gap-1">
+                            <div class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" name="dias_laborales" value="0" id="dia0_alta" checked>
+                                <label class="form-check-label small" for="dia0_alta">Lun</label>
+                            </div>
+                            <div class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" name="dias_laborales" value="1" id="dia1_alta" checked>
+                                <label class="form-check-label small" for="dia1_alta">Mar</label>
+                            </div>
+                            <div class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" name="dias_laborales" value="2" id="dia2_alta" checked>
+                                <label class="form-check-label small" for="dia2_alta">Mié</label>
+                            </div>
+                            <div class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" name="dias_laborales" value="3" id="dia3_alta" checked>
+                                <label class="form-check-label small" for="dia3_alta">Jue</label>
+                            </div>
+                            <div class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" name="dias_laborales" value="4" id="dia4_alta" checked>
+                                <label class="form-check-label small" for="dia4_alta">Vie</label>
+                            </div>
+                            <div class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" name="dias_laborales" value="5" id="dia5_alta" checked>
+                                <label class="form-check-label small" for="dia5_alta">Sáb</label>
+                            </div>
+                            <div class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" name="dias_laborales" value="6" id="dia6_alta" checked>
+                                <label class="form-check-label small" for="dia6_alta">Dom</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" name="activo" id="chkActivoAlta" checked>
+                    <label class="form-check-label fw-bold text-dark small" for="chkActivoAlta">
+                        Usuario Activo (Permitir acceso al sistema)
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-warning btn-lg w-100 py-3 fw-extrabold text-dark rounded-3 shadow-sm text-uppercase">
+                    <i class="fa-solid fa-user-plus me-1"></i> Registrar Empleado
+                </button>
             </form>
         </div>
     </div>
 
     <!-- Columna Derecha: Tabla Administrativa -->
-    <div class="col-md-8">
-        <div class="card card-custom p-0 overflow-hidden h-100 table-custom">
-            <!-- Título de cabecera adherido a la tabla -->
-            <div class="bg-light p-4 border-bottom">
-                 <h5 class="fw-bold text-brand-black m-0 mt-2">Plantilla de Personal Activo en Sistema</h5>
+    <div class="col-xl-8 col-lg-7">
+        <div class="card p-0 overflow-hidden shadow-sm bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-radius: 16px;">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2" style="background-color: var(--color-bg-main);">
+                 <h5 class="fw-extrabold text-dark m-0 font-heading"><i class="fa-solid fa-address-book me-2" style="color: var(--color-secondary);"></i> Plantilla de Personal</h5>
+                 <span class="badge bg-white text-dark border px-3 py-2 fw-bold font-mono">{{ vendedores|length }} Registrados</span>
             </div>
+
             <div class="table-responsive p-0">
                 <table class="table table-hover align-middle m-0">
-                    <thead class="bg-light">
+                    <thead style="background-color: var(--color-secondary); color: #FFFFFF;">
                         <tr>
-                            <th class="ps-4">NOMBRE DE EMPLEADO</th>
-                            <th>EMAIL (CREDENCIAL DE ACCESO)</th>
-                            <th>ROL / PERFIL</th>
-                            <th class="text-center pe-4">STATUS</th>
+                            <th class="ps-4 text-white font-heading" style="font-size: 0.78rem;">EMPLEADO</th>
+                            <th class="text-white font-heading" style="font-size: 0.78rem;">ROL / CARGO</th>
+                            <th class="text-white font-heading" style="font-size: 0.78rem;">HORARIO (BOGOTÁ)</th>
+                            <th class="text-center text-white font-heading" style="font-size: 0.78rem;">ESTATUS</th>
+                            <th class="text-end pe-4 text-white font-heading" style="font-size: 0.78rem;">ACCIONES</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for vendedor in vendedores %}
-                        <tr>
-                            <td class="fw-bold text-brand-black ps-4">{{ vendedor.nombre }}</td>
-                            <td class="text-muted">{{ vendedor.email }}</td>
-                            <td class="text-muted">
-                                {% if vendedor.rol == 'vendedor' %}
-                                    <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-2">Vendedor Cajas</span>
-                                {% elif vendedor.rol == 'bodega' %}
-                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill px-2">Encargado Bodega</span>
-                                {% elif vendedor.rol == 'vendedor_bodega' %}
-                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-2">Vendedor Bodega</span>
+                        {% for v in vendedores %}
+                        <tr class="{% if not v.activo %}bg-light opacity-75{% endif %}">
+                            <!-- Empleado -->
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-dark text-warning fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                        {{ v.nombre[:2]|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-extrabold text-dark fs-6">{{ v.nombre }}</div>
+                                        <div class="text-muted small"><i class="fa-regular fa-envelope me-1"></i>{{ v.email }}</div>
+                                        {% if v.telefono %}
+                                        <div class="text-muted small" style="font-size: 0.75rem;"><i class="fa-solid fa-phone me-1 text-success"></i>{{ v.telefono }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Rol -->
+                            <td>
+                                {% if v.rol == 'mesero' %}
+                                    <span class="badge bg-warning bg-opacity-15 text-dark border border-warning rounded-pill px-3 py-1 fw-bold">
+                                        <i class="fa-solid fa-user-tie me-1 text-warning"></i>Mesero(a)
+                                    </span>
+                                {% elif v.rol == 'cajero' %}
+                                    <span class="badge bg-info bg-opacity-15 text-info border border-info rounded-pill px-3 py-1 fw-bold">
+                                        <i class="fa-solid fa-cash-register me-1"></i>Cajero(a) / POS
+                                    </span>
+                                {% elif v.rol == 'vendedor' %}
+                                    <span class="badge bg-success bg-opacity-15 text-success border border-success rounded-pill px-3 py-1 fw-bold">
+                                        <i class="fa-solid fa-beer-mug-empty me-1"></i>Vendedor / Barra
+                                    </span>
+                                {% elif v.rol == 'admin' %}
+                                    <span class="badge bg-dark text-white rounded-pill px-3 py-1 fw-bold">
+                                        <i class="fa-solid fa-shield-halved me-1 text-warning"></i>Admin
+                                    </span>
                                 {% else %}
-                                    {{ vendedor.rol }}
+                                    <span class="badge bg-light text-dark border rounded-pill px-3 py-1 fw-bold">{{ v.rol|upper }}</span>
                                 {% endif %}
                             </td>
-                            <td class="text-center pe-4">
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2 w-100">Activo</span>
+
+                            <!-- Horario Laboral -->
+                            <td>
+                                {% if v.horario_restringido and v.hora_inicio and v.hora_fin %}
+                                    <div class="fw-bold text-dark small">
+                                        <i class="fa-regular fa-clock text-warning me-1"></i>{{ v.hora_inicio.strftime('%I:%M %p') }} - {{ v.hora_fin.strftime('%I:%M %p') }}
+                                    </div>
+                                    <div class="small text-muted" style="font-size: 0.72rem;">
+                                        Días: 
+                                        {% set d_map = {'0':'Lun', '1':'Mar', '2':'Mié', '3':'Jue', '4':'Vie', '5':'Sáb', '6':'Dom'} %}
+                                        {% for d in (v.dias_laborales or '').split(',') if d %}
+                                            <span class="badge bg-light text-dark border p-1" style="font-size: 0.65rem;">{{ d_map.get(d, d) }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1 fw-semibold small">
+                                        <i class="fa-solid fa-infinity me-1"></i>24/7 Libre
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Status con toggle interactivo -->
+                            <td class="text-center">
+                                {% if v.activo %}
+                                    <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold shadow-sm" data-id="{{ v.id }}" data-nombre="{{ v.nombre }}" data-activo="1" onclick="toggleStatusBtn(this)" title="Clic para desactivar">
+                                        <i class="fa-solid fa-circle-check me-1"></i>Activo
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 py-1 fw-bold shadow-sm" data-id="{{ v.id }}" data-nombre="{{ v.nombre }}" data-activo="0" onclick="toggleStatusBtn(this)" title="Clic para activar">
+                                        <i class="fa-solid fa-circle-xmark me-1"></i>Inactivo
+                                    </button>
+                                {% endif %}
+                            </td>
+
+                            <!-- Acciones (Editar / Eliminar) -->
+                            <td class="text-end pe-4">
+                                <div class="btn-group shadow-sm rounded-pill">
+                                    <button type="button" 
+                                        class="btn btn-sm btn-outline-dark fw-bold px-3" 
+                                        data-id="{{ v.id }}"
+                                        data-nombre="{{ v.nombre }}"
+                                        data-email="{{ v.email }}"
+                                        data-telefono="{{ v.telefono or '' }}"
+                                        data-rol="{{ v.rol }}"
+                                        data-activo="{{ 1 if v.activo else 0 }}"
+                                        data-horario-restringido="{{ 1 if v.horario_restringido else 0 }}"
+                                        data-hora-inicio="{% if v.hora_inicio %}{{ v.hora_inicio.strftime('%H:%M') }}{% endif %}"
+                                        data-hora-fin="{% if v.hora_fin %}{{ v.hora_fin.strftime('%H:%M') }}{% endif %}"
+                                        data-dias-laborales="{{ v.dias_laborales or '0,1,2,3,4,5,6' }}"
+                                        onclick="abrirModalEditarBtn(this)" 
+                                        title="Editar Datos y Horarios">
+                                        <i class="fa-solid fa-pen-to-square me-1 text-primary"></i> Editar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger fw-bold px-3" data-id="{{ v.id }}" data-nombre="{{ v.nombre }}" onclick="confirmarEliminarBtn(this)" title="Eliminar Personal">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">
+                            <td colspan="5" class="text-center py-5 text-muted">
                                 <i class="fa-solid fa-users-slash fs-1 mb-3 opacity-25"></i>
-                                <p class="mb-0">Aún no has dado de alta a ningún Vendedor/Cajero.</p>
+                                <p class="mb-0 fw-bold">Aún no has registrado personal en el sistema.</p>
                             </td>
                         </tr>
                         {% endfor %}
@@ -112,4 +313,246 @@
         </div>
     </div>
 </div>
+
+<!-- ==================== MODAL DE EDICIÓN DE PERSONAL ==================== -->
+<div class="modal fade" id="modalEditarPersonal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 p-3 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-3">
+                        <i class="fa-solid fa-user-pen fs-5"></i>
+                    </div>
+                    <h5 class="modal-title fw-extrabold text-dark">Editar Información y Horarios de Empleado</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formEditarPersonal" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <div class="modal-body py-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-dark fw-bold small mb-1">Nombre Completo <span class="text-danger">*</span></label>
+                            <input type="text" id="edit_nombre" name="nombre" class="form-control bg-light border-0 py-2 fw-semibold" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dark fw-bold small mb-1">Correo Electrónico (Login) <span class="text-danger">*</span></label>
+                            <input type="email" id="edit_email" name="email" class="form-control bg-light border-0 py-2 fw-semibold" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dark fw-bold small mb-1">Teléfono / Celular</label>
+                            <input type="text" id="edit_telefono" name="telefono" class="form-control bg-light border-0 py-2">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dark fw-bold small mb-1">Rol / Cargo <span class="text-danger">*</span></label>
+                            <select id="edit_rol" name="rol" class="form-select bg-light border-0 py-2 fw-bold" required>
+                                <option value="mesero">Mesero(a)</option>
+                                <option value="cajero">Cajero(a) / POS</option>
+                                <option value="vendedor">Vendedor / Barra</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-dark fw-bold small mb-1">Cambiar Contraseña (Dejar vacío para no modificarla)</label>
+                            <input type="password" name="password" class="form-control bg-light border-0 py-2" placeholder="Nueva contraseña (opcional)">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Panel de Horario en Modal de Edición -->
+                    <div class="p-3 bg-light rounded-4 border">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="horario_restringido" id="edit_horario_restringido" onchange="togglePanelHorarioEdit(this.checked)">
+                            <label class="form-check-label fw-extrabold text-dark small" for="edit_horario_restringido">
+                                ⏱️ Restringir Horario de Acceso (Hora Bogotá)
+                            </label>
+                        </div>
+
+                        <div id="panelHorarioEdit" style="display: none;">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold text-dark mb-1">Hora Inicio</label>
+                                    <input type="time" id="edit_hora_inicio" name="hora_inicio" class="form-control form-control-sm bg-white border fw-bold">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold text-dark mb-1">Hora Fin</label>
+                                    <input type="time" id="edit_hora_fin" name="hora_fin" class="form-control form-control-sm bg-white border fw-bold">
+                                </div>
+                            </div>
+
+                            <label class="form-label small fw-bold text-dark mb-1">Días Laborales Permitidos:</label>
+                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input edit-dia-chk" type="checkbox" name="dias_laborales" value="0" id="edit_dia_0">
+                                    <label class="form-check-label small" for="edit_dia_0">Lun</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input edit-dia-chk" type="checkbox" name="dias_laborales" value="1" id="edit_dia_1">
+                                    <label class="form-check-label small" for="edit_dia_1">Mar</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input edit-dia-chk" type="checkbox" name="dias_laborales" value="2" id="edit_dia_2">
+                                    <label class="form-check-label small" for="edit_dia_2">Mié</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input edit-dia-chk" type="checkbox" name="dias_laborales" value="3" id="edit_dia_3">
+                                    <label class="form-check-label small" for="edit_dia_3">Jue</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input edit-dia-chk" type="checkbox" name="dias_laborales" value="4" id="edit_dia_4">
+                                    <label class="form-check-label small" for="edit_dia_4">Vie</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input edit-dia-chk" type="checkbox" name="dias_laborales" value="5" id="edit_dia_5">
+                                    <label class="form-check-label small" for="edit_dia_5">Sáb</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input edit-dia-chk" type="checkbox" name="dias_laborales" value="6" id="edit_dia_6">
+                                    <label class="form-check-label small" for="edit_dia_6">Dom</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" name="activo" id="edit_activo">
+                        <label class="form-check-label fw-bold text-dark small" for="edit_activo">
+                            Cuenta Activa (Habilitada para trabajar en el sistema)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-extrabold shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const csrf_token = "{{ csrf_token() }}";
+
+    function togglePanelHorarioAlta(checked) {
+        const panel = document.getElementById('panelHorarioAlta');
+        if (panel) panel.style.display = checked ? 'block' : 'none';
+    }
+
+    function togglePanelHorarioEdit(checked) {
+        const panel = document.getElementById('panelHorarioEdit');
+        if (panel) panel.style.display = checked ? 'block' : 'none';
+    }
+
+    function abrirModalEditarBtn(btn) {
+        const ds = btn.dataset;
+        const form = document.getElementById('formEditarPersonal');
+        form.action = `/admin/vendedores/editar/${ds.id}`;
+
+        document.getElementById('edit_nombre').value = ds.nombre || '';
+        document.getElementById('edit_email').value = ds.email || '';
+        document.getElementById('edit_telefono').value = ds.telefono || '';
+        document.getElementById('edit_rol').value = ds.rol || 'cajero';
+        document.getElementById('edit_activo').checked = (ds.activo === '1');
+
+        const restringido = (ds.horarioRestringido === '1');
+        document.getElementById('edit_horario_restringido').checked = restringido;
+        document.getElementById('edit_hora_inicio').value = ds.horaInicio || '16:00';
+        document.getElementById('edit_hora_fin').value = ds.horaFin || '03:00';
+
+        togglePanelHorarioEdit(restringido);
+
+        // Marcar días
+        const diasArr = (ds.diasLaborales || '0,1,2,3,4,5,6').split(',').map(d => d.trim());
+        for (let i = 0; i <= 6; i++) {
+            const chk = document.getElementById(`edit_dia_${i}`);
+            if (chk) chk.checked = diasArr.includes(String(i));
+        }
+
+        new bootstrap.Modal(document.getElementById('modalEditarPersonal')).show();
+    }
+
+    async function toggleStatusBtn(btn) {
+        const id = btn.dataset.id;
+        const nombre = btn.dataset.nombre;
+        const estaActivo = (btn.dataset.activo === '1');
+        toggleStatus(id, nombre, estaActivo);
+    }
+
+    async function confirmarEliminarBtn(btn) {
+        const id = btn.dataset.id;
+        const nombre = btn.dataset.nombre;
+        confirmarEliminar(id, nombre);
+    }
+
+    async function toggleStatus(id, nombre, estaActivo) {
+        const accion = estaActivo ? 'desactivar' : 'activar';
+        const resConf = await Swal.fire({
+            title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} a ${nombre}?`,
+            text: estaActivo 
+                ? 'El empleado no podrá iniciar sesión en la plataforma mientras esté desactivado.' 
+                : 'El empleado podrá volver a iniciar sesión y operar.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: estaActivo ? '#d33' : '#16a34a',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: `Sí, ${accion}`,
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!resConf.isConfirmed) return;
+
+        try {
+            const res = await fetch(`/admin/vendedores/toggle_status/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf_token }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Estatus Actualizado!',
+                    text: data.mensaje,
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => location.reload());
+            } else {
+                Swal.fire('Error', data.error || 'No se pudo cambiar el estado.', 'error');
+            }
+        } catch (e) {
+            Swal.fire('Error', 'Error al comunicarse con el servidor.', 'error');
+        }
+    }
+
+    async function confirmarEliminar(id, nombre) {
+        const resConf = await Swal.fire({
+            title: `¿Eliminar a ${nombre}?`,
+            text: 'Esta acción removerá el usuario del sistema o lo desactivará si tiene ventas registradas.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!resConf.isConfirmed) return;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/vendedores/eliminar/${id}`;
+        const inputCsrf = document.createElement('input');
+        inputCsrf.type = 'hidden';
+        inputCsrf.name = 'csrf_token';
+        inputCsrf.value = csrf_token;
+        form.appendChild(inputCsrf);
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
 {% endblock %}

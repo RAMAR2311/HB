@@ -20,7 +20,8 @@
             
             <!-- Cabecera Oficial -->
             <div class="text-center mb-5 pb-4 border-bottom d-print-block">
-                <h1 class="fw-bold text-brand-black mb-3">EL GOLDY</h1>
+                <h1 class="fw-bold text-brand-black mb-1 font-heading">HARRY BEER STATION</h1>
+                <p class="text-muted font-brand mb-3">Craft Brewery & Bar | Sistema POS</p>
                 <h4 class="text-brand-black fw-bold mb-1">ESTADO DE RESULTADOS CONTABLE</h4>
                 <p class="mb-0 text-secondary">
                     Período Limitado: <strong>{{ fecha_inicio }}</strong> hasta <strong>{{ fecha_fin }}</strong><br>
@@ -47,43 +48,38 @@
                 </tbody>
             </table>
 
-            <!-- Desglose de Productos Estrella Vendidos -->
-            <div class="row g-2 mb-5">
+            <!-- Desglose de Productos Vendidos por Categoría -->
+            <div class="row g-2 mb-4">
                 <div class="col-12"><p class="text-muted small fw-bold mb-1 text-uppercase">Cantidades Vendidas (Referencia)</p></div>
+                {% for categoria, cantidad in datos.cantidades_por_categoria.items() %}
                 <div class="col-md-auto">
-                    <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-normal"><i class="fa-solid fa-hotdog text-warning me-1"></i> Perros Solos: <strong>{{ datos.cantidades.perros_solos }}</strong></span>
+                    <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-normal">
+                        <i class="fa-solid fa-box text-primary me-1"></i> {{ categoria }}: <strong>{{ cantidad }}</strong>
+                    </span>
                 </div>
+                {% endfor %}
                 <div class="col-md-auto">
-                    <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-normal"><i class="fa-solid fa-burger text-warning me-1"></i> En Combo: <strong>{{ datos.cantidades.perros_combo }}</strong></span>
-                </div>
-                <div class="col-md-auto">
-                    <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-normal"><i class="fa-solid fa-gift text-success me-1"></i> Cortesías: <strong>{{ datos.cantidades.cortesias }}</strong></span>
-                </div>
-                <div class="col-md-auto">
-                    <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-normal"><i class="fa-solid fa-bottle-droplet text-primary me-1"></i> Gaseosas Pequeñas: <strong>{{ datos.cantidades.gaseosas_pequenas }}</strong></span>
-                </div>
-                <div class="col-md-auto">
-                    <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-normal"><i class="fa-solid fa-bottle-water text-primary me-1"></i> Gaseosas Grandes: <strong>{{ datos.cantidades.gaseosas_grandes }}</strong></span>
+                    <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-normal"><i class="fa-solid fa-gift text-success me-1"></i> Cortesías Otorgadas: <strong>{{ datos.total_cortesias }}</strong></span>
                 </div>
             </div>
 
-            <!-- Resumen de Ventas en Grueso (Agrupado) -->
+            <!-- Resumen de Costos Directos (COGS) e Ingresos Netos Operativos -->
             <div class="card bg-light border border-dark border-opacity-10 shadow-none mb-5 rounded-3 page-break-inside-avoid">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold text-brand-black mb-3"><i class="fa-solid fa-boxes-stacked me-2 text-primary"></i> RESUMEN DE VENTAS EN GRUESO (VOLUMEN REAL)</h6>
+                    <h6 class="fw-bold text-brand-black mb-3"><i class="fa-solid fa-boxes-stacked me-2 text-primary"></i> COSTO DE LA MERCANCÍA VENDIDA (COGS)</h6>
                     <div class="row g-4 text-center">
-                        <div class="col-6 col-md-4">
-                            <div class="p-3 bg-white border rounded-3">
-                                <h2 class="fw-bolder text-warning mb-0">{{ datos.cantidades.total_perros_grueso }}</h2>
-                                <p class="text-muted small fw-bold mb-0 text-uppercase">Total Perros Vendidos</p>
-                                <small class="text-secondary" style="font-size:0.7rem;">(Solos + Combos + Cortesías)</small>
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 bg-white border rounded-3 border-danger border-opacity-50">
+                                <h3 class="fw-bolder text-danger mb-0">-${{ (datos.cogs_total)|cop }}</h3>
+                                <p class="text-muted small fw-bold mb-0 text-uppercase">Costo del Inventario Saliente</p>
+                                <small class="text-secondary" style="font-size:0.75rem;">(Cálculo automático de productos facturados)</small>
                             </div>
                         </div>
-                        <div class="col-6 col-md-4">
-                            <div class="p-3 bg-white border rounded-3">
-                                <h2 class="fw-bolder text-primary mb-0">{{ datos.cantidades.total_gaseosas_pequenas_reales }}</h2>
-                                <p class="text-muted small fw-bold mb-0 text-uppercase">Gaseosas Pequeñas Reales</p>
-                                <small class="text-secondary" style="font-size:0.7rem;">(Sueltas + Gastadas en Combo)</small>
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 bg-white border rounded-3 border-success border-opacity-50">
+                                <h3 class="fw-bolder text-success mb-0">${{ (datos.utilidad_bruta)|cop }}</h3>
+                                <p class="text-muted small fw-bold mb-0 text-uppercase">Utilidad Bruta</p>
+                                <small class="text-secondary" style="font-size:0.75rem;">(Ingresos de Ventas Totales - COGS)</small>
                             </div>
                         </div>
                     </div>
@@ -173,9 +169,13 @@
 
             <table class="table table-borderless table-sm fw-semibold text-secondary fs-6 mb-5">
                 <tbody>
+                    <tr class="border-top">
+                        <td class="p-3" width="70%">Gastos Adicionales (Operacionales + Indirectos + Compras extra)</td>
+                        <td class="text-danger text-end p-3" width="30%">-${{ (datos.costos_indirectos + datos.costos_producto + datos.gastos_operacionales)|cop }}</td>
+                    </tr>
                     <tr class="border-top text-brand-black fw-bolder bg-light">
-                        <td class="p-3" width="70%">Σ TOTAL SALIDAS Y DEDUCCIONES</td>
-                        <td class="text-danger text-end p-3 fs-5" width="30%">-${{ (datos.total_salidas)|cop }}</td>
+                        <td class="p-3">Σ TOTAL SALIDAS (COGS + Gastos Adicionales)</td>
+                        <td class="text-danger text-end p-3 fs-5">-${{ (datos.total_salidas)|cop }}</td>
                     </tr>
                 </tbody>
             </table>

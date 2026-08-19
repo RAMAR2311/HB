@@ -2,74 +2,271 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-lg-10 col-md-12">
         <div class="d-flex align-items-center mb-4">
-            <a href="/inventory" class="btn btn-light rounded-circle me-3 border-0"><i class="fa-solid fa-arrow-left"></i></a>
-            <h2 class="fw-bold text-brand-black mb-0">{% if producto %}Editar Producto{% else %}Crear Producto{% endif %}</h2>
+            <a href="{{ url_for('inventory_bp.index') }}" class="btn btn-light rounded-circle me-3 border-0 shadow-sm"><i class="fa-solid fa-arrow-left"></i></a>
+            <div>
+                <h2 class="fw-bold text-brand-black mb-0">{% if producto %}Editar Ítem: {{ producto.nombre }}{% else %}Nuevo Ítem / Producto / Combo{% endif %}</h2>
+                <small class="text-muted">Configura las propiedades, categoría, precios y recetas/combos</small>
+            </div>
         </div>
 
-        <div class="card card-custom p-5 border-0 shadow-sm">
-            <form method="POST" enctype="multipart/form-data">
+        <div class="card card-custom p-4 p-md-5 border-0 shadow-sm bg-white">
+            <form method="POST" enctype="multipart/form-data" id="productForm">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <!-- Enviar precio mínimo en 0 siempre por compatibilidad del backend -->
                 <input type="hidden" name="precio_minimo" value="0"/>
                 
                 <div class="row g-4">
+                    <!-- SKU y Nombre -->
                     <div class="col-md-4">
-                        <label class="form-label fw-bold text-brand-black">SKU</label>
-                        <input type="text" class="form-control bg-light border-0" name="sku" required placeholder="Ej: HD-001" value="{{ producto.sku if producto else '' }}">
+                        <label class="form-label fw-bold text-brand-black">Código / SKU <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control bg-light border-0" name="sku" required placeholder="Ej: CERV-01, COMBO-01" value="{{ producto.sku if producto else '' }}">
                     </div>
                     <div class="col-md-8">
-                        <label class="form-label fw-bold text-brand-black">Nombre del Producto</label>
-                        <input type="text" class="form-control bg-light border-0" name="nombre" required placeholder="Ej: Hot Dog Sencillo" value="{{ producto.nombre if producto else '' }}">
+                        <label class="form-label fw-bold text-brand-black">Nombre del Ítem <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control bg-light border-0" name="nombre" required placeholder="Ej: Cerveza Corona 355ml, Combo Rumbero, Mojito Clásico" value="{{ producto.nombre if producto else '' }}">
                     </div>
                     
-                    <div class="col-md-12 mt-4">
-                        <label class="form-label fw-bold text-brand-black">Tipo</label>
-                        <select class="form-select bg-light border-0" name="tipo_producto" id="tipoProducto" required>
-                            <option value="producto_final" {% if producto and producto.tipo_producto == 'producto_final' %}selected{% endif %}>Menú POS</option>
-                            <option value="insumo" {% if producto and producto.tipo_producto == 'insumo' %}selected{% endif %}>Materia Prima</option>
+                    <!-- Categoría y Tipo de Producto -->
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold text-brand-black">Categoría <span class="text-danger">*</span></label>
+                        <select class="form-select bg-light border-0" name="categoria_id" id="categoriaSelect" required>
+                            <option value="">Selecciona una categoría...</option>
+                            {% for cat in categorias %}
+                            <option value="{{ cat.id }}" {% if (producto and producto.categoria_id == cat.id) or (not producto and request.args.get('tipo') == 'combo' and 'Combo' in cat.nombre) %}selected{% endif %}>
+                                {{ cat.nombre }}
+                            </option>
+                            {% endfor %}
                         </select>
                     </div>
 
-                    <div class="col-md-4 mt-4">
-                        <label class="form-label fw-bold text-brand-black text-truncate">Existencias</label>
-                        <input type="number" class="form-control bg-light border-0" name="cantidad_stock" min="0" value="{{ producto.cantidad_stock if producto else '0' }}">
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label fw-bold text-brand-black">Tipo de Ítem <span class="text-danger">*</span></label>
+                        <select class="form-select bg-light border-0" name="tipo_producto" id="tipoProducto" required>
+                            <option value="producto_simple" {% if (producto and (producto.tipo_producto in ['producto_simple', 'producto_final'] and not producto.recetas)) or (not producto and request.args.get('tipo') != 'combo') %}selected{% endif %}>
+                                🍺 Producto Directo (Stock propio: Cervezas, Botellas, Gaseosas)
+                            </option>
+                            <option value="combo" {% if (producto and producto.tipo_producto == 'combo') or (not producto and request.args.get('tipo') == 'combo') %}selected{% endif %}>
+                                📦 Combo / Paquete (Varios productos juntos a un precio especial)
+                            </option>
+                            <option value="preparado" {% if producto and producto.tipo_producto == 'preparado' %}selected{% endif %}>
+                                🍸 Cóctel / Plato Preparado (Receta de insumos: Mojito, Picada)
+                            </option>
+                            <option value="insumo" {% if producto and producto.tipo_producto == 'insumo' %}selected{% endif %}>
+                                🌿 Insumo / Materia Prima (Licor por trago, carnes, salsas, etc.)
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Existencias, Costo, Precio de Venta y Botellaje Mesero -->
+                    <div class="col-md-3 mt-3" id="divStock">
+                        <label class="form-label fw-bold text-brand-black">Stock Actual</label>
+                        <input type="number" step="any" class="form-control bg-light border-0 fw-bold" name="cantidad_stock" id="inputStock" min="0" value="{{ "%.2f"|format(producto.cantidad_stock|float) if (producto and producto.cantidad_stock and (producto.cantidad_stock|float % 1 != 0)) else (producto.cantidad_stock|int if producto else '0') }}">
+                        <small class="text-muted">Unidades u Onzas (oz) disponibles.</small>
                     </div>
                     
-                    <div class="col-md-8 mt-4" id="divCosto">
-                        <label class="form-label fw-bold text-brand-black text-truncate">Costo</label>
+                    <div class="col-md-3 mt-3" id="divCosto">
+                        <label class="form-label fw-bold text-brand-black">Costo Compra</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white border-0">$</span>
-                            <input type="number" step="1" class="form-control bg-light border-0" name="precio_costo" value="{{ "%.0f"|format(producto.precio_costo|float) if producto else '0' }}">
+                            <input type="number" step="any" class="form-control bg-light border-0" name="precio_costo" id="inputCosto" value="{{ "%.2f"|format(producto.precio_costo|float) if (producto and producto.precio_costo and (producto.precio_costo|float % 1 != 0)) else ("%.0f"|format(producto.precio_costo|float) if producto else '0') }}">
                         </div>
+                        <small class="text-muted">Costo unitario o por onza.</small>
                     </div>
                     
-                    <div class="col-md-8 mt-4" id="divPrecio">
-                        <label class="form-label fw-bold text-brand-black text-truncate">Precio</label>
+                    <div class="col-md-3 mt-3" id="divPrecio">
+                        <label class="form-label fw-bold text-brand-black">Precio de Venta</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white border-0">$</span>
                             <input type="number" step="1" class="form-control bg-light border-0" name="precio_sugerido" value="{{ "%.0f"|format(producto.precio_sugerido|float) if producto else '0' }}">
                         </div>
+                        <small class="text-muted">Cobrado al público.</small>
+                    </div>
+
+                    <div class="col-md-3 mt-3" id="divBotellaje">
+                        <label class="form-label fw-bold text-success">
+                            <i class="fa-solid fa-hand-holding-dollar me-1"></i> Botellaje Mesero
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-0 text-success fw-bold">$</span>
+                            <input type="number" step="1" class="form-control bg-light border-0 fw-bold text-success" name="comision_mesero" value="{{ "%.0f"|format(producto.comision_mesero|float) if (producto and producto.comision_mesero) else '0' }}" placeholder="0">
+                        </div>
+                        <small class="text-muted">Comisión mesero por unidad.</small>
+                    </div>
+
+                    <!-- Asistente / Calculadora de Botellas a Onzas (1 oz = 30 ml) para Insumos -->
+                    <div class="col-12 mt-3 d-none" id="divConversorOnzas">
+                        <div class="p-3 rounded-4 bg-light border border-warning-subtle shadow-sm" style="border-left: 5px solid #f59e0b !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                <h6 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-calculator text-warning"></i>
+                                    Calculadora de Botellas a Onzas <span class="badge bg-warning text-dark">1 oz = 30 ml</span>
+                                </h6>
+                                <span class="text-muted small">Calcula automáticamente el stock en onzas y costo unitario por onza para coctelería</span>
+                            </div>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Nº de Botellas</label>
+                                    <input type="number" id="calcNumBotellas" class="form-control form-control-sm bg-white" placeholder="Ej: 5" value="1" min="1">
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Tamaño Botella (ml)</label>
+                                    <select id="calcTamanoBotella" class="form-select form-select-sm bg-white">
+                                        <option value="750">750 ml (25.0 oz)</option>
+                                        <option value="1000">1000 ml / 1 Litro (33.33 oz)</option>
+                                        <option value="375">375 ml / Media (12.5 oz)</option>
+                                        <option value="1750">1750 ml / Galón (58.33 oz)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Costo x Botella ($)</label>
+                                    <input type="number" id="calcCostoBotella" class="form-control form-control-sm bg-white" placeholder="Ej: 45000">
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <button type="button" id="btnAplicarOnzas" class="btn btn-sm btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm">
+                                        <i class="fa-solid fa-bolt me-1"></i> Aplicar Stock y Costo
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-muted small" id="calcResultadoTexto">
+                                👉 <strong>1 Botella</strong> de 750ml = <span class="badge bg-white text-dark border fw-bold">25.00 oz</span> totales.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="col-12 mt-3">
+                        <label class="form-label fw-bold text-brand-black">Descripción / Notas Adicionales</label>
+                        <textarea class="form-control bg-light border-0" name="observacion" rows="2" placeholder="Notas sobre el producto, presentación, etc.">{{ producto.observacion if producto else '' }}</textarea>
+                    </div>
+
+                    <!-- Proveedor y Carga a Cuenta Corriente (Cuentas por Pagar) -->
+                    {% if not producto %}
+                    <div class="col-12 mt-4">
+                        <div class="p-3 rounded-4 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-secondary) !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                <h6 class="fw-extrabold text-dark font-heading m-0 d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-truck-ramp-box" style="color: var(--color-secondary);"></i>
+                                    Proveedor & Carga a Cuenta Corriente (Opcional)
+                                </h6>
+                                <span class="badge bg-light text-dark border font-mono" style="font-size: 0.72rem;">Cuentas por Pagar</span>
+                            </div>
+                            <p class="text-muted small font-body mb-3">
+                                Selecciona el proveedor del producto para que el sistema cree automáticamente una factura de compra por el stock inicial ingresado en su cuenta corriente.
+                            </p>
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-5">
+                                    <label class="form-label fw-bold text-dark small font-heading">Proveedor</label>
+                                    <select class="form-select border-0 bg-light fw-semibold text-dark shadow-none" name="provider_id" id="providerSelect">
+                                        <option value="">-- Sin proveedor / Compra al contado directa --</option>
+                                        {% for prov in proveedores %}
+                                        <option value="{{ prov.id }}">{{ prov.nombre }}{% if prov.empresa %} ({{ prov.empresa }}){% endif %}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold text-dark small font-heading">N° Factura / Folio del Proveedor</label>
+                                    <input type="text" class="form-control border-0 bg-light font-mono shadow-none" name="numero_factura_proveedor" placeholder="Ej: FAC-10928">
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check pt-3">
+                                        <input class="form-check-input" type="checkbox" name="cargar_factura_proveedor" id="chkCargarFactura" value="1" checked>
+                                        <label class="form-check-label small fw-bold text-dark font-heading" for="chkCargarFactura">
+                                            Cargar a cuenta corriente
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Imagen / Foto para todos los Productos y Combos -->
+                    <div class="col-12 mt-4">
+                        <label class="form-label fw-bold text-brand-black">
+                            <i class="fa-solid fa-camera text-brand-orange me-1"></i> Imagen / Foto del Ítem (Productos, Combos, Bebidas o Platos)
+                        </label>
+                        <div class="d-flex flex-column flex-sm-row align-items-center gap-3 p-3 bg-light rounded-4 border">
+                            <div class="position-relative flex-shrink-0" style="width: 90px; height: 90px;">
+                                {% if producto and producto.imagen %}
+                                    <img id="imagePreview" src="{{ url_for('static', filename='uploads/' ~ producto.imagen) }}" alt="Preview" class="rounded-3 border w-100 h-100 shadow-sm" style="object-fit: cover;">
+                                {% else %}
+                                    <div id="imagePlaceholder" class="rounded-3 border w-100 h-100 bg-white d-flex align-items-center justify-content-center shadow-sm">
+                                        <i class="fa-solid fa-image text-muted fs-3 opacity-50"></i>
+                                    </div>
+                                    <img id="imagePreview" src="#" alt="Preview" class="rounded-3 border w-100 h-100 shadow-sm d-none" style="object-fit: cover;">
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1 w-100">
+                                <input type="file" class="form-control border-0 bg-white shadow-sm mb-1" name="imagen" id="imagenInput" accept="image/*">
+                                <small class="text-muted">Formatos admitidos: JPG, PNG, WEBP, JPEG. El sistema optimizará la imagen automáticamente.</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="col-md-12 mt-5" id="divRecetas">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-brand-black m-0"><i class="fa-solid fa-mortar-pestle text-brand-orange me-2"></i>Ingredientes / Receta</h5>
-                        <button type="button" class="btn btn-sm btn-outline-dark rounded-pill" id="btnAddReceta">
+                <!-- ═══════════════════ SECCIÓN DE ARMAR COMBO ═══════════════════ -->
+                <div class="col-md-12 mt-5 p-4 rounded-4 bg-light border" id="divCombos">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <div>
+                            <h5 class="fw-bold text-brand-black m-0">
+                                <i class="fa-solid fa-layer-group text-brand-orange me-2"></i>Productos que Componen este Combo
+                            </h5>
+                            <small class="text-muted">Selecciona los productos y las cantidades que se descontarán automáticamente al vender el combo.</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-orange rounded-pill fw-bold" id="btnAddComboItem">
+                            <i class="fa-solid fa-plus me-1"></i> Añadir Producto al Combo
+                        </button>
+                    </div>
+                    
+                    <div id="comboItemsContainer">
+                        {% if producto and producto.es_combo and producto.recetas %}
+                            {% for receta in producto.recetas %}
+                            <div class="row g-2 mb-2 combo-line align-items-center bg-white p-2 rounded-3 border">
+                                <div class="col-md-8 col-7">
+                                    <label class="form-label small text-muted mb-1">Producto</label>
+                                    <select name="combo_producto_id[]" class="form-select bg-light border-0 fw-bold">
+                                        <option value="">Seleccionar Producto...</option>
+                                        {% for prod in todos_productos %}
+                                        <option value="{{ prod.id }}" {% if prod.id == receta.insumo_id %}selected{% endif %}>
+                                            {{ prod.nombre }} (SKU: {{ prod.sku }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3 col-3">
+                                    <label class="form-label small text-muted mb-1">Cantidad</label>
+                                    <input type="number" step="1" min="1" name="combo_cantidad[]" class="form-control bg-light border-0 text-center fw-bold" placeholder="Cant." value="{{ "%.0f"|format(receta.cantidad_requerida|float) }}">
+                                </div>
+                                <div class="col-md-1 col-2 text-end pt-3">
+                                    <button type="button" class="btn btn-outline-danger btn-remove-combo-item rounded-circle" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ═══════════════════ SECCIÓN DE RECETA / INSUMOS PREPARADOS ═══════════════════ -->
+                <div class="col-md-12 mt-5 p-4 rounded-4 bg-light border" id="divRecetas">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <div>
+                            <h5 class="fw-bold text-brand-black m-0">
+                                <i class="fa-solid fa-martini-glass-citrus text-brand-orange me-2"></i>Receta / Ingredientes de Preparación
+                            </h5>
+                            <small class="text-muted">Insumos que se descontarán de la barra/cocina al preparar este cóctel o plato.</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-dark rounded-pill fw-bold" id="btnAddReceta">
                             <i class="fa-solid fa-plus me-1"></i> Añadir Insumo
                         </button>
                     </div>
-                    <div class="alert alert-secondary border-0 small text-muted mb-3 rounded-3">
-                        <i class="fa-solid fa-info-circle me-1"></i> Al vender este producto, el sistema descontará matemáticamente las cantidades de las materias primas vinculadas aquí.
-                    </div>
                     
                     <div id="recetasContainer">
-                        {% if producto and producto.recetas %}
+                        {% if producto and producto.es_preparado and producto.recetas %}
                             {% for receta in producto.recetas %}
-                            <div class="row g-2 mb-2 receta-line align-items-center">
-                                <div class="col-7">
+                            <div class="row g-2 mb-2 receta-line align-items-center bg-white p-2 rounded-3 border">
+                                <div class="col-md-7 col-7">
+                                    <label class="form-label small text-muted mb-1">Insumo</label>
                                     <select name="receta_insumo_id[]" class="form-select bg-light border-0 fw-bold">
                                         <option value="">Seleccionar Materia Prima...</option>
                                         {% for insumo in insumos %}
@@ -77,10 +274,11 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-3">
-                                    <input type="number" step="0.01" min="0.01" name="receta_cantidad[]" class="form-control bg-light border-0 text-center" placeholder="Cant." value="{{ receta.cantidad_requerida }}">
+                                <div class="col-md-3 col-3">
+                                    <label class="form-label small text-muted mb-1">Cant. / Medida</label>
+                                    <input type="number" step="0.01" min="0.01" name="receta_cantidad[]" class="form-control bg-light border-0 text-center fw-bold" placeholder="Cant." value="{{ receta.cantidad_requerida }}">
                                 </div>
-                                <div class="col-2 text-end">
+                                <div class="col-md-2 col-2 text-end pt-3">
                                     <button type="button" class="btn btn-outline-danger btn-remove-receta rounded-circle"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>
@@ -92,9 +290,9 @@
                 <hr class="my-5 border-light">
                 
                 <div class="text-end">
-                    <a href="/inventory" class="btn btn-link text-muted text-decoration-none fw-bold me-3">Cancelar</a>
-                    <button type="submit" class="btn btn-yellow px-5 py-2 rounded-pill shadow-sm fw-bold">
-                        Guardar
+                    <a href="{{ url_for('inventory_bp.index') }}" class="btn btn-link text-muted text-decoration-none fw-bold me-3">Cancelar</a>
+                    <button type="submit" id="btnSubmitProduct" class="btn btn-yellow px-5 py-3 rounded-pill shadow-sm fw-bold fs-6" style="background-color: #f59e0b; color: #111; cursor: pointer; min-width: 180px;">
+                        <i class="fa-solid fa-check me-1"></i> Guardar Ítem
                     </button>
                 </div>
             </form>
@@ -104,50 +302,220 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const productForm = document.getElementById('productForm');
     const tipoSelect = document.getElementById('tipoProducto');
+    const divStock = document.getElementById('divStock');
     const divCosto = document.getElementById('divCosto');
     const divPrecio = document.getElementById('divPrecio');
+    const divCombos = document.getElementById('divCombos');
     const divRecetas = document.getElementById('divRecetas');
+    
+    const divConversorOnzas = document.getElementById('divConversorOnzas');
+    
+    const btnAddComboItem = document.getElementById('btnAddComboItem');
+    const comboItemsContainer = document.getElementById('comboItemsContainer');
+    
     const btnAddReceta = document.getElementById('btnAddReceta');
     const recetasContainer = document.getElementById('recetasContainer');
 
-    function toggleCostoPrecio() {
-        if (tipoSelect.value === 'insumo') {
-            divCosto.classList.remove('d-none');
-            divPrecio.classList.add('d-none');
-            if(divRecetas) divRecetas.classList.add('d-none');
-        } else {
+    function toggleTipoProducto() {
+        const val = tipoSelect.value;
+        
+        if (val === 'combo') {
+            divStock.classList.add('d-none');
             divCosto.classList.add('d-none');
             divPrecio.classList.remove('d-none');
-            if(divRecetas) divRecetas.classList.remove('d-none');
+            divCombos.classList.remove('d-none');
+            divRecetas.classList.add('d-none');
+            if (divConversorOnzas) divConversorOnzas.classList.add('d-none');
+            
+            // Habilitar campos de combos y deshabilitar recetas
+            if (comboItemsContainer) {
+                comboItemsContainer.querySelectorAll('input, select').forEach(el => el.disabled = false);
+            }
+            if (recetasContainer) {
+                recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
+            }
+
+            // Auto-seleccionar la categoría oficial de Combos
+            const catSelect = document.getElementById('categoriaSelect');
+            if (catSelect) {
+                for (let i = 0; i < catSelect.options.length; i++) {
+                    if (catSelect.options[i].text.toLowerCase().includes('combo')) {
+                        catSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Si el contenedor de combo está vacío, añadir 1 fila por defecto
+            if (comboItemsContainer && comboItemsContainer.children.length === 0) {
+                addComboRow();
+            }
+        } else if (val === 'preparado') {
+            divStock.classList.add('d-none');
+            divCosto.classList.add('d-none');
+            divPrecio.classList.remove('d-none');
+            divCombos.classList.add('d-none');
+            divRecetas.classList.remove('d-none');
+            if (divConversorOnzas) divConversorOnzas.classList.add('d-none');
+            
+            // Habilitar recetas y deshabilitar combos
+            if (recetasContainer) {
+                recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = false);
+            }
+            if (comboItemsContainer) {
+                comboItemsContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
+            }
+
+            if (recetasContainer && recetasContainer.children.length === 0) {
+                addRecetaRow();
+            }
+        } else if (val === 'insumo') {
+            divStock.classList.remove('d-none');
+            divCosto.classList.remove('d-none');
+            divPrecio.classList.add('d-none');
+            divCombos.classList.add('d-none');
+            divRecetas.classList.add('d-none');
+            if (divConversorOnzas) divConversorOnzas.classList.remove('d-none');
+
+            if (comboItemsContainer) {
+                comboItemsContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
+            }
+            if (recetasContainer) {
+                recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
+            }
+        } else {
+            // Producto Simple / Directo
+            divStock.classList.remove('d-none');
+            divCosto.classList.remove('d-none');
+            divPrecio.classList.remove('d-none');
+            divCombos.classList.add('d-none');
+            divRecetas.classList.add('d-none');
+            if (divConversorOnzas) divConversorOnzas.classList.add('d-none');
+
+            if (comboItemsContainer) {
+                comboItemsContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
+            }
+            if (recetasContainer) {
+                recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
+            }
         }
     }
 
-    if(btnAddReceta) {
-        btnAddReceta.addEventListener('click', function() {
-            const row = document.createElement('div');
-            row.className = 'row g-2 mb-2 receta-line align-items-center';
-            row.innerHTML = `
-                <div class="col-7">
-                    <select name="receta_insumo_id[]" class="form-select bg-light border-0 fw-bold">
-                        <option value="">Seleccionar Materia Prima...</option>
-                        {% for insumo in insumos %}
-                        <option value="{{ insumo.id }}">{{ insumo.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-3">
-                    <input type="number" step="0.01" min="0.01" name="receta_cantidad[]" class="form-control bg-light border-0 text-center" placeholder="Cant." value="1">
-                </div>
-                <div class="col-2 text-end">
-                    <button type="button" class="btn btn-outline-danger btn-remove-receta rounded-circle"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-            `;
-            recetasContainer.appendChild(row);
+    // Calculadora de Botellas a Onzas (1 oz = 30 ml)
+    const calcNumBotellas = document.getElementById('calcNumBotellas');
+    const calcTamanoBotella = document.getElementById('calcTamanoBotella');
+    const calcCostoBotella = document.getElementById('calcCostoBotella');
+    const btnAplicarOnzas = document.getElementById('btnAplicarOnzas');
+    const calcResultadoTexto = document.getElementById('calcResultadoTexto');
+    const inputStock = document.getElementById('inputStock');
+    const inputCosto = document.getElementById('inputCosto');
+
+    function actualizarCalculoOnzas() {
+        if (!calcNumBotellas || !calcTamanoBotella || !calcResultadoTexto) return;
+        const botellas = parseFloat(calcNumBotellas.value) || 0;
+        const ml = parseFloat(calcTamanoBotella.value) || 750;
+        const costoBotella = parseFloat(calcCostoBotella ? calcCostoBotella.value : 0) || 0;
+
+        const onzasPorBotella = ml / 30.0;
+        const totalOnzas = botellas * onzasPorBotella;
+        const costoPorOnza = totalOnzas > 0 && costoBotella > 0 ? (costoBotella * botellas) / totalOnzas : 0;
+
+        let txt = `👉 <strong>${botellas} Botella(s)</strong> de ${ml}ml = <span class="badge bg-warning text-dark border fw-bold fs-6">${totalOnzas.toFixed(2)} oz</span> totales`;
+        if (costoPorOnza > 0) {
+            txt += ` | Costo: <strong class="text-success">$${Math.round(costoPorOnza).toLocaleString('es-CO')} / oz</strong>`;
+        }
+        calcResultadoTexto.innerHTML = txt;
+    }
+
+    if (calcNumBotellas) calcNumBotellas.addEventListener('input', actualizarCalculoOnzas);
+    if (calcTamanoBotella) calcTamanoBotella.addEventListener('change', actualizarCalculoOnzas);
+    if (calcCostoBotella) calcCostoBotella.addEventListener('input', actualizarCalculoOnzas);
+
+    if (btnAplicarOnzas) {
+        btnAplicarOnzas.addEventListener('click', function() {
+            const botellas = parseFloat(calcNumBotellas.value) || 0;
+            const ml = parseFloat(calcTamanoBotella.value) || 750;
+            const costoBotella = parseFloat(calcCostoBotella ? calcCostoBotella.value : 0) || 0;
+
+            const onzasPorBotella = ml / 30.0;
+            const totalOnzas = botellas * onzasPorBotella;
+            const costoPorOnza = totalOnzas > 0 && costoBotella > 0 ? (costoBotella * botellas) / totalOnzas : 0;
+
+            if (inputStock) {
+                inputStock.value = parseFloat(totalOnzas.toFixed(2));
+                inputStock.classList.add('bg-warning-subtle');
+                setTimeout(() => inputStock.classList.remove('bg-warning-subtle'), 1200);
+            }
+            if (inputCosto && costoPorOnza > 0) {
+                inputCosto.value = Math.round(costoPorOnza);
+                inputCosto.classList.add('bg-success-subtle');
+                setTimeout(() => inputCosto.classList.remove('bg-success-subtle'), 1200);
+            }
         });
     }
 
-    if(recetasContainer) {
+    function addComboRow() {
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 combo-line align-items-center bg-white p-2 rounded-3 border';
+        row.innerHTML = `
+            <div class="col-md-8 col-7">
+                <label class="form-label small text-muted mb-1">Producto</label>
+                <select name="combo_producto_id[]" class="form-select bg-light border-0 fw-bold">
+                    <option value="">Seleccionar Producto...</option>
+                    {% for prod in todos_productos %}
+                    <option value="{{ prod.id }}">{{ prod.nombre }} (SKU: {{ prod.sku }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-3">
+                <label class="form-label small text-muted mb-1">Cantidad</label>
+                <input type="number" step="1" min="1" name="combo_cantidad[]" class="form-control bg-light border-0 text-center fw-bold" placeholder="Cant." value="1">
+            </div>
+            <div class="col-md-1 col-2 text-end pt-3">
+                <button type="button" class="btn btn-outline-danger btn-remove-combo-item rounded-circle" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        `;
+        comboItemsContainer.appendChild(row);
+    }
+
+    function addRecetaRow() {
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 receta-line align-items-center bg-white p-2 rounded-3 border';
+        row.innerHTML = `
+            <div class="col-md-7 col-7">
+                <label class="form-label small text-muted mb-1">Insumo</label>
+                <select name="receta_insumo_id[]" class="form-select bg-light border-0 fw-bold">
+                    <option value="">Seleccionar Materia Prima...</option>
+                    {% for insumo in insumos %}
+                    <option value="{{ insumo.id }}">{{ insumo.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 col-3">
+                <label class="form-label small text-muted mb-1">Cant. / Medida</label>
+                <input type="number" step="0.01" min="0.01" name="receta_cantidad[]" class="form-control bg-light border-0 text-center fw-bold" placeholder="Cant." value="1">
+            </div>
+            <div class="col-md-2 col-2 text-end pt-3">
+                <button type="button" class="btn btn-outline-danger btn-remove-receta rounded-circle"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        `;
+        recetasContainer.appendChild(row);
+    }
+
+    if (btnAddComboItem) btnAddComboItem.addEventListener('click', addComboRow);
+    if (btnAddReceta) btnAddReceta.addEventListener('click', addRecetaRow);
+
+    if (comboItemsContainer) {
+        comboItemsContainer.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-remove-combo-item')) {
+                e.target.closest('.combo-line').remove();
+            }
+        });
+    }
+
+    if (recetasContainer) {
         recetasContainer.addEventListener('click', function(e) {
             if (e.target.closest('.btn-remove-receta')) {
                 e.target.closest('.receta-line').remove();
@@ -155,8 +523,83 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    tipoSelect.addEventListener('change', toggleCostoPrecio);
-    toggleCostoPrecio(); // Llamada inicial para setear la vista correcta
+    tipoSelect.addEventListener('change', toggleTipoProducto);
+    toggleTipoProducto();
+
+    // Validación y envío del formulario
+    if (productForm) {
+        productForm.addEventListener('submit', function(e) {
+            const sku = productForm.querySelector('input[name="sku"]');
+            const nombre = productForm.querySelector('input[name="nombre"]');
+            const cat = document.getElementById('categoriaSelect');
+
+            if (!sku || !sku.value.trim()) {
+                e.preventDefault();
+                alert('⚠️ Por favor ingresa el Código / SKU del producto.');
+                if (sku) sku.focus();
+                return false;
+            }
+            if (!nombre || !nombre.value.trim()) {
+                e.preventDefault();
+                alert('⚠️ Por favor ingresa el Nombre del producto.');
+                if (nombre) nombre.focus();
+                return false;
+            }
+            if (!cat || !cat.value) {
+                e.preventDefault();
+                alert('⚠️ Por favor selecciona una Categoría para el producto.');
+                if (cat) cat.focus();
+                return false;
+            }
+
+            const val = tipoSelect.value;
+            if (val === 'combo') {
+                const selects = comboItemsContainer.querySelectorAll('select[name="combo_producto_id[]"]');
+                let valid = false;
+                selects.forEach(s => { if (s.value) valid = true; });
+                if (!valid) {
+                    e.preventDefault();
+                    alert('⚠️ Debes seleccionar al menos un producto para armar el combo.');
+                    return false;
+                }
+            } else if (val === 'preparado') {
+                const selects = recetasContainer.querySelectorAll('select[name="receta_insumo_id[]"]');
+                let valid = false;
+                selects.forEach(s => { if (s.value) valid = true; });
+                if (!valid) {
+                    e.preventDefault();
+                    alert('⚠️ Debes seleccionar al menos un insumo para la receta del cóctel o plato.');
+                    return false;
+                }
+            }
+
+            // Habilitar todos los inputs relevantes antes del envío
+            const btnSubmit = document.getElementById('btnSubmitProduct');
+            if (btnSubmit) {
+                btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Guardando...';
+            }
+        });
+    }
+
+    // Vista previa instantánea de la imagen subida
+    const imagenInput = document.getElementById('imagenInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const imagePlaceholder = document.getElementById('imagePlaceholder');
+
+    if (imagenInput) {
+        imagenInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagePreview.src = event.target.result;
+                    imagePreview.classList.remove('d-none');
+                    if (imagePlaceholder) imagePlaceholder.classList.add('d-none');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

@@ -3,212 +3,407 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EL GOLDY - CRM & POS</title>
+    <title>HARRY BEER STATION</title>
+
+    <!-- Favicon & PWA -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/icon 152x152.png') }}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121214">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Google Fonts: Montserrat, Poppins, Pacifico, Roboto Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Pacifico&family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Bootstrap 5 CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
+    <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        /* REGLA DE BRANDING ESTRICTA Y COLORES */
+        /* =========================================================
+           SISTEMA DE DISEÑO: HARRY BEER STATION (VINTAGE INDUSTRIAL)
+           ========================================================= */
         :root {
-            --brand-orange: #FF8C00; /* Naranja Hot Dog */
-            --brand-yellow: #FFC107; /* Amarillo Mostaza */
-            --brand-black: #111111;  /* Negro */
-            --brand-white: #FFFFFF;  /* Blanco */
-            
-            --brand-bg: #F8F9FA;     /* Fondo claro */
+            /* Paleta Oficial */
+            --color-bg-main: #F7F4EB;     /* Crema / Blanco Hueso vintage limpio */
+            --color-surface: #FFFFFF;     /* Tarjetas, modales, contenedores */
+            --color-text-main: #121214;   /* Negro Sólido para textos y contornos */
+            --color-primary: #D92524;     /* Rojo Rubí (CTA, Alertas, Pendientes) */
+            --color-secondary: #C84E1A;   /* Naranja Óxido / Terracota (Headers, Sub-acciones) */
+            --color-accent: #F38B21;      /* Naranja Ámbar (Badges, Ocupados, Activos) */
+            --color-border: #E5E0D5;      /* Gris Cálido sutil para divisiones */
+
+            /* Tipografías */
+            --font-headings: 'Montserrat', sans-serif;
+            --font-body: 'Poppins', sans-serif;
+            --font-brand: 'Pacifico', cursive;
+            --font-mono: 'Roboto Mono', monospace;
+
+            /* Variables de Compatibilidad */
+            --brand-orange: #C84E1A;
+            --brand-yellow: #F38B21;
+            --brand-black: #121214;
+            --brand-white: #FFFFFF;
+            --brand-bg: #F7F4EB;
+            --card-shadow: 0 4px 14px rgba(18, 18, 20, 0.05);
+            --card-shadow-hover: 0 8px 25px rgba(18, 18, 20, 0.09);
         }
 
         body {
-            background-color: var(--brand-bg);
-            color: var(--brand-black);
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--color-bg-main);
+            color: var(--color-text-main);
+            font-family: var(--font-body);
             -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
         }
 
-        /* Variables Utilitarias */
-        .bg-brand-yellow { background-color: var(--brand-yellow) !important; color: var(--brand-black); }
-        .bg-brand-orange { background-color: var(--brand-orange) !important; color: var(--brand-black); }
-        .bg-brand-white { background-color: var(--brand-white) !important; }
-        .text-brand-black { color: var(--brand-black) !important; }
-        .text-brand-orange { color: var(--brand-orange) !important; }
-
-        /* Navbar E-commerce Vibe */
-        .navbar-custom {
-            background-color: var(--brand-black);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            padding: 1rem 0;
-            border-bottom: 4px solid var(--brand-orange);
-        }
-        
-        .navbar-custom .navbar-brand {
-            font-weight: 900;
-            color: var(--brand-white);
-            font-size: 2rem;
-            letter-spacing: -1px;
-            text-transform: uppercase;
-        }
-        .navbar-custom .navbar-brand span {
-            color: var(--brand-orange);
-        }
-
-        .navbar-custom .nav-link, .navbar-custom .fa-bars {
-            color: var(--brand-white) !important;
-            font-weight: 500;
-            transition: opacity 0.2s;
-        }
-
-        .navbar-custom .nav-link:hover, .navbar-custom .fa-bars:hover {
-            opacity: 0.7;
-        }
-
-        /* Botones Pro */
-        .btn-orange {
-            background-color: var(--brand-orange);
-            color: var(--brand-white);
+        h1, h2, h3, h4, h5, h6, .font-heading {
+            font-family: var(--font-headings);
             font-weight: 700;
-            border: none;
+            color: var(--color-text-main);
+        }
+
+        .font-brand {
+            font-family: var(--font-brand);
+        }
+
+        .font-mono {
+            font-family: var(--font-mono);
+        }
+
+        /* Clases Utilitarias de Color */
+        .bg-hb-main { background-color: var(--color-bg-main) !important; }
+        .bg-hb-surface { background-color: var(--color-surface) !important; }
+        .bg-hb-primary { background-color: var(--color-primary) !important; color: #FFFFFF !important; }
+        .bg-hb-secondary { background-color: var(--color-secondary) !important; color: #FFFFFF !important; }
+        .bg-hb-accent { background-color: var(--color-accent) !important; color: #121214 !important; }
+        .bg-hb-dark { background-color: var(--color-text-main) !important; color: #F7F4EB !important; }
+
+        .text-hb-primary { color: var(--color-primary) !important; }
+        .text-hb-secondary { color: var(--color-secondary) !important; }
+        .text-hb-accent { color: var(--color-accent) !important; }
+        .text-hb-dark { color: var(--color-text-main) !important; }
+
+        /* Botones Pro HARRY BEER STATION */
+        .btn-hb-primary {
+            background-color: var(--color-primary);
+            color: #FFFFFF;
+            font-family: var(--font-headings);
+            font-weight: 700;
+            border: 2px solid var(--color-text-main);
+            border-radius: 12px;
             transition: all 0.2s ease-in-out;
         }
-        .btn-orange:hover {
-            background-color: #E65100;
-            color: var(--brand-white);
+        .btn-hb-primary:hover {
+            background-color: #B91C1B;
+            color: #FFFFFF;
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(255, 140, 0, 0.4);
+            box-shadow: 0 6px 16px rgba(217, 37, 36, 0.35);
         }
 
-        .btn-yellow {
-            background-color: var(--brand-yellow);
-            color: var(--brand-black);
+        .btn-hb-secondary {
+            background-color: var(--color-secondary);
+            color: #FFFFFF;
+            font-family: var(--font-headings);
             font-weight: 700;
-            border: none;
+            border: 2px solid var(--color-text-main);
+            border-radius: 12px;
             transition: all 0.2s ease-in-out;
         }
-        .btn-yellow:hover {
-            background-color: #FFB300;
-            color: var(--brand-black);
+        .btn-hb-secondary:hover {
+            background-color: #A93E12;
+            color: #FFFFFF;
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.4);
+            box-shadow: 0 6px 16px rgba(200, 78, 26, 0.35);
         }
 
-        /* Superficies Claras y Limpias */
-        .card-custom {
-            background-color: var(--brand-white);
-            border: none;
+        .btn-hb-accent {
+            background-color: var(--color-accent);
+            color: var(--color-text-main);
+            font-family: var(--font-headings);
+            font-weight: 800;
+            border: 2px solid var(--color-text-main);
+            border-radius: 12px;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-hb-accent:hover {
+            background-color: #E27B13;
+            color: var(--color-text-main);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(243, 139, 33, 0.35);
+        }
+
+        .btn-hb-dark {
+            background-color: var(--color-text-main);
+            color: var(--color-bg-main);
+            font-family: var(--font-headings);
+            font-weight: 700;
+            border: 2px solid var(--color-text-main);
+            border-radius: 12px;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-hb-dark:hover {
+            background-color: #2D2D32;
+            color: #FFFFFF;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(18, 18, 20, 0.3);
+        }
+
+        /* Fallbacks de botones */
+        .btn-yellow { background-color: var(--color-accent); color: var(--color-text-main); font-weight: 700; border: 2px solid var(--color-text-main); }
+        .btn-yellow:hover { background-color: #E27B13; color: var(--color-text-main); }
+        .btn-orange { background-color: var(--color-secondary); color: #FFFFFF; font-weight: 700; border: 2px solid var(--color-text-main); }
+        .btn-orange:hover { background-color: #A93E12; color: #FFFFFF; }
+
+        /* Tarjetas & Contenedores */
+        .card-custom, .card-hb {
+            background-color: var(--color-surface);
+            border: 1.5px solid var(--color-border);
             border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            box-shadow: var(--card-shadow);
         }
 
         /* Tablas */
-        .table-custom {
-            background-color: var(--brand-white);
-            border-radius: 12px;
+        .table-custom, .table-hb {
+            background-color: var(--color-surface);
+            border-radius: 14px;
+            border: 1.5px solid var(--color-border);
+            overflow: hidden;
         }
-        .table-custom thead th {
-            color: var(--brand-black);
-            /* Borde inferior de la tabla ahora en rosa pastel para hacer juego con el navbar */
-            border-bottom: 2px solid var(--brand-orange);
-            text-transform: uppercase;
-            font-size: 0.75rem;
+        .table-custom thead th, .table-hb thead th {
+            background-color: var(--color-secondary);
+            color: #FFFFFF;
+            font-family: var(--font-headings);
+            font-size: 0.8rem;
             letter-spacing: 0.5px;
-            padding: 1.25rem 1rem;
+            text-transform: uppercase;
+            padding: 1rem 1rem;
+            border-bottom: 2px solid var(--color-text-main);
         }
-        .table-custom tbody td {
-            padding: 1.25rem 1rem;
+        .table-custom tbody td, .table-hb tbody td {
+            padding: 1rem 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        /* Navbar Vintage Industrial */
+        .navbar-custom {
+            background-color: var(--color-text-main);
+            box-shadow: 0 4px 15px rgba(18, 18, 20, 0.35);
+            padding: 0.85rem 0;
+            border-bottom: 4px solid var(--color-secondary);
+        }
+        
+        .navbar-custom .navbar-brand {
+            font-family: var(--font-headings);
+            font-weight: 900;
+            color: #FFFFFF;
+            font-size: 1.6rem;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+
+        .badge-station {
+            background-color: var(--color-primary);
+            color: #FFFFFF;
+            font-size: 0.72rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            letter-spacing: 1px;
+            font-family: var(--font-headings);
+            font-weight: 800;
+            border: 1px solid #FFFFFF;
             vertical-align: middle;
         }
 
         /* Sidebar Offcanvas Estilos */
+        .offcanvas {
+            background-color: #FFFFFF;
+            border-right: 2px solid var(--color-text-main) !important;
+        }
+        .offcanvas-header {
+            background-color: var(--color-text-main);
+            border-bottom: 4px solid var(--color-secondary) !important;
+        }
         .offcanvas-body .nav-link {
+            font-family: var(--font-headings);
+            font-size: 0.92rem;
+            color: var(--color-text-main);
+            border-radius: 10px;
+            padding: 10px 14px;
+            border: 1px solid transparent;
             transition: all 0.2s ease-in-out;
         }
         .offcanvas-body .nav-link:hover {
-            background-color: rgba(163, 216, 222, 0.15); /* bg-brand-yellow transparente */
+            background-color: rgba(200, 78, 26, 0.1);
+            color: var(--color-secondary);
             transform: translateX(4px);
-            border-left: 3px solid var(--brand-orange) !important;
+            border: 1px solid var(--color-secondary);
+        }
+
+        /* Bottom Navbar PWA (Móvil) */
+        .bottom-nav {
+            background-color: var(--color-text-main);
+            border-top: 3px solid var(--color-secondary);
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.15);
+            z-index: 1040;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0.5rem 0;
+            padding-bottom: env(safe-area-inset-bottom, 0.5rem); /* Soporte iOS Notch */
+        }
+        .bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-family: var(--font-headings);
+            font-weight: 600;
+            width: 25%;
+            transition: all 0.2s;
+        }
+        .bottom-nav .nav-item:hover, .bottom-nav .nav-item.active {
+            color: var(--color-accent);
+        }
+        .bottom-nav .nav-item i {
+            font-size: 1.3rem;
+            margin-bottom: 2px;
+        }
+
+        /* Espaciado para que el main no quede debajo de la barra inferior */
+        @media (max-width: 767.98px) {
+            main.container-fluid {
+                padding-bottom: 80px !important;
+            }
+            .navbar-custom {
+                padding: 0.5rem 0;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Navbar EL GOLDY -->
-    <nav class="navbar navbar-custom mb-5 position-relative">
-        <div class="container-fluid px-3 d-flex align-items-center">
+    <!-- Navbar HARRY BEER STATION -->
+    <nav class="navbar navbar-custom mb-4 position-relative">
+        <div class="container-fluid px-3 d-flex align-items-center justify-content-between">
             
-            {% if current_user.is_authenticated %}
-            <!-- Botón Hamburguesa (Izquierda) -->
-            <button class="navbar-toggler border-0 shadow-none p-2 me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#FFFFFF" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
-                </svg>
-            </button>
-            {% endif %}
+            <div class="d-flex align-items-center">
+                {% if current_user.is_authenticated %}
+                <!-- Botón Hamburguesa (Oculto en móvil, se usa bottom nav) -->
+                <button class="navbar-toggler border-0 shadow-none p-2 me-3 d-none d-md-block" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#FFFFFF" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+                    </svg>
+                </button>
+                {% endif %}
 
-            <!-- Brand Logo y Texto (Izquierda) -->
-            <a class="navbar-brand d-flex align-items-center fw-bold m-0" href="{{ url_for('index') }}" style="text-decoration: none;">
-                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo El Goldy" class="me-3" style="height: 50px; border-radius: 6px; box-shadow: 0 0 10px rgba(255,140,0,0.5);">
-                <span class="text-white fs-3" style="letter-spacing: -1px;">HOT <span style="color: var(--brand-orange);">DOGS</span> <small class="text-white-50 ms-1" style="font-size: 1rem; font-weight: normal; letter-spacing: 0;">El Goldy</small></span>
-            </a>
+                <!-- Brand Logo y Nombre Oficial -->
+                <a class="navbar-brand d-flex align-items-center m-0" href="{{ url_for('index') }}" style="text-decoration: none;">
+                    <img src="{{ url_for('static', filename='img/icon 152x152.png') }}" alt="Logo Harry Beer" class="rounded-circle me-2" style="width: 38px; height: 38px; object-fit: cover; border: 1.5px solid #FFFFFF;">
+                    <div class="d-flex align-items-baseline gap-2 flex-wrap">
+                        <span class="text-white">HARRY <span style="color: var(--color-accent);">BEER</span></span>
+                        <span class="badge-station">STATION</span>
+                    </div>
+                </a>
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-dark border border-secondary text-light px-3 py-2 d-none d-sm-inline-block font-mono">
+                    <i class="fa-solid fa-user-circle me-1 text-warning"></i>{{ current_user.nombre }} ({{ current_user.rol|upper }})
+                </span>
+                <a href="{{ url_for('auth_bp.logout') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-bold text-white border-danger" title="Cerrar Sesión">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </a>
+            </div>
+            {% endif %}
         </div>
     </nav>
 
     {% if current_user.is_authenticated %}
     <!-- Offcanvas Menú Lateral (Sidebar) -->
-    <div class="offcanvas offcanvas-start border-0 shadow" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel" style="width: 280px;">
-        <div class="offcanvas-header bg-brand-black border-bottom" style="border-bottom: 3px solid var(--brand-orange) !important;">
-            <h5 class="offcanvas-title fw-bold text-white" id="offcanvasNavbarLabel">
-                <i class="fa-solid fa-user-circle me-2" style="color: var(--brand-orange);"></i>{{ current_user.rol | capitalize }}
-            </h5>
+    <div class="offcanvas offcanvas-start shadow-lg" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel" style="width: 290px;">
+        <div class="offcanvas-header">
+            <div class="d-flex align-items-center gap-2">
+                <img src="{{ url_for('static', filename='img/icon 152x152.png') }}" alt="Logo Harry Beer" class="rounded-circle" style="width: 38px; height: 38px; object-fit: cover; border: 1.5px solid #FFFFFF;">
+                <div>
+                    <h6 class="offcanvas-title fw-extrabold text-white m-0 font-heading">HARRY BEER STATION</h6>
+                    <small class="text-white-50" style="font-size: 0.75rem;">Panel Operativo</small>
+                </div>
+            </div>
             <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <div class="offcanvas-body d-flex flex-column p-0">
+        <div class="offcanvas-body d-flex flex-column p-0 bg-white">
+            <div class="p-3 bg-light border-bottom d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-dark text-warning fw-bold d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    {{ current_user.nombre[:2]|upper }}
+                </div>
+                <div>
+                    <div class="fw-bold text-dark font-heading" style="font-size: 0.9rem;">{{ current_user.nombre }}</div>
+                    <span class="badge bg-secondary text-white font-mono" style="font-size: 0.7rem;">{{ current_user.rol|upper }}</span>
+                </div>
+            </div>
+
             <ul class="navbar-nav w-100 mb-auto px-3 py-3 gap-2">
                 {% if current_user.rol == 'admin' %}
-                    <!-- Enlaces Únicos para el Administrador de la Tienda -->
+                    <!-- Menú Administrador -->
                     <li class="nav-item">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-semibold border-bottom" href="/admin/dashboard"><i class="fa-solid fa-chart-pie text-muted me-2" style="width:20px; text-align:center;"></i> Dashboard</a>
+                        <a class="nav-link border" href="/admin/dashboard"><i class="fa-solid fa-chart-pie me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-semibold border-bottom" href="/inventory"><i class="fa-solid fa-box text-muted me-2" style="width:20px; text-align:center;"></i> Inventario Tienda</a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-semibold border-bottom" href="/sales/nueva"><i class="fa-solid fa-cash-register text-muted me-2" style="width:20px; text-align:center;"></i> Caja Terminal</a>
+                        <a class="nav-link border" href="/inventory"><i class="fa-solid fa-boxes-stacked me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Inventario & Stock</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-semibold border-bottom" href="/admin/vendedores"><i class="fa-solid fa-users text-muted me-2" style="width:20px; text-align:center;"></i> Personal</a>
+                        <a class="nav-link border" href="/tables/mapa"><i class="fa-solid fa-cash-register me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Terminal POS / Mesas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-semibold border-bottom" href="/gastos"><i class="fa-solid fa-money-bill-transfer me-2" style="color: var(--brand-yellow); width:20px; text-align:center;"></i> Gastos</a>
-                    </li>
-
-                    <li class="nav-item mt-2">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-bold bg-light border" href="/arqueo/nuevo"><i class="fa-solid fa-calculator text-brand-yellow me-2" style="width:20px; text-align:center;"></i> Arqueo de Caja</a>
-                    </li>
-                {% elif current_user.rol == 'vendedor' %}
-                    <!-- Vistas Estrictamente Operativas (Cajeros) -->
-
-                    <li class="nav-item">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-semibold border-bottom" href="/sales/nueva"><i class="fa-solid fa-cash-register text-brand-orange me-2" style="width:20px; text-align:center;"></i> Módulo de Caja</a>
+                        <a class="nav-link border" href="/admin/vendedores"><i class="fa-solid fa-users-gear me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Personal & Horarios</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-semibold border-bottom" href="/sales/ventas_hoy"><i class="fa-solid fa-list-check me-2" style="color: var(--brand-yellow); width:20px; text-align:center;"></i> Ventas del Día</a>
+                        <a class="nav-link border" href="/proveedores"><i class="fa-solid fa-truck-ramp-box me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Proveedores & Cuentas</a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-semibold border-bottom" href="/gastos"><i class="fa-solid fa-money-bill-transfer text-success me-2" style="width:20px; text-align:center;"></i> Gastos</a>
+                        <a class="nav-link border" href="/liquidaciones"><i class="fa-solid fa-hand-holding-dollar me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Liquidaciones & Cortesías</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link border" href="/gastos"><i class="fa-solid fa-money-bill-transfer me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Gastos</a>
                     </li>
                     <li class="nav-item mt-2">
-                        <a class="nav-link text-brand-black rounded-3 px-3 py-2 fw-bold bg-light border" href="/arqueo/nuevo"><i class="fa-solid fa-calculator text-brand-yellow me-2" style="width:20px; text-align:center;"></i> Arqueo</a>
+                        <a class="nav-link fw-bold bg-light border border-secondary" href="/arqueo/nuevo"><i class="fa-solid fa-calculator me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Arqueo de Caja</a>
                     </li>
-
+                {% elif current_user.rol == 'vendedor' or current_user.rol == 'cajero' or current_user.rol == 'mesero' %}
+                    <!-- Menú Operativo -->
+                    <li class="nav-item">
+                        <a class="nav-link border" href="/tables/mapa"><i class="fa-solid fa-cash-register me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Terminal POS / Mesas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link border" href="/inventory/ingreso"><i class="fa-solid fa-truck-ramp-box me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Ingreso de Mercancía</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link border" href="/sales/ventas_hoy"><i class="fa-solid fa-list-check me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Ventas del Día</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link border" href="/liquidaciones"><i class="fa-solid fa-hand-holding-dollar me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Propinas & Cortesías</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link border" href="/gastos"><i class="fa-solid fa-money-bill-transfer me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Gastos</a>
+                    </li>
+                    <li class="nav-item mt-2">
+                        <a class="nav-link fw-bold bg-light border border-secondary" href="/arqueo/nuevo"><i class="fa-solid fa-calculator me-2" style="color: var(--color-accent) !important; width: 22px;"></i> Arqueo</a>
+                    </li>
                 {% endif %}
             </ul>
             
-            <!-- Interfaz de Desconexión / Fin de Turno al final del sidebar -->
             <div class="px-3 pb-4 mt-auto">
                 <a class="btn btn-outline-danger w-100 rounded-pill fw-bold" href="{{ url_for('auth_bp.logout') }}">
-                    <i class="fa-solid fa-sign-out-alt me-2"></i> Salir del Sistema
+                    <i class="fa-solid fa-power-off me-2"></i> Cerrar Turno / Salir
                 </a>
             </div>
         </div>
@@ -216,13 +411,14 @@
     {% endif %}
 
     <!-- App Container -->
-    <main class="container mb-5">
+    <main class="container-fluid px-3 px-md-4 mb-5">
         <!-- Renderizado de Flash Messages de Flask -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                        {{ message }}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show border-0 shadow-sm rounded-4 mb-4" role="alert">
+                        <i class="fa-solid {{ 'fa-circle-check text-success' if category == 'success' else 'fa-triangle-exclamation text-danger' }} me-2 fs-5"></i>
+                        <span class="fw-semibold">{{ message }}</span>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
@@ -232,23 +428,170 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if current_user.is_authenticated %}
+    <!-- Bottom Navigation PWA (Solo en móvil) -->
+    <nav class="fixed-bottom d-md-none bottom-nav">
+        {% if current_user.rol == 'admin' %}
+            <a href="/admin/dashboard" class="nav-item">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Inicio</span>
+            </a>
+        {% else %}
+            <a href="/sales/ventas_hoy" class="nav-item">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Ventas</span>
+            </a>
+        {% endif %}
+        
+        <a href="/tables/mapa" class="nav-item">
+            <i class="fa-solid fa-cash-register"></i>
+            <span>Mesas</span>
+        </a>
+        
+        {% if current_user.rol == 'admin' %}
+            <a href="/inventory" class="nav-item">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>Stock</span>
+            </a>
+        {% else %}
+            <a href="/inventory/ingreso" class="nav-item">
+                <i class="fa-solid fa-truck-ramp-box"></i>
+                <span>Ingreso</span>
+            </a>
+        {% endif %}
+
+        <a href="/arqueo/nuevo" class="nav-item">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Arqueo</span>
+        </a>
+    </nav>
+    {% endif %}
+
+    <!-- Install App Prompt Modal -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050; bottom: 80px !important;">
+        <div id="pwa-install-toast" class="toast align-items-center text-bg-dark border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-3">
+                    <img src="{{ url_for('static', filename='img/icon 152x152.png') }}" width="40" class="rounded">
+                    <div>
+                        <strong>Harry Beer Station</strong><br>
+                        <small>Instala la App para una mejor experiencia</small>
+                    </div>
+                    <button id="pwa-install-btn" class="btn btn-sm btn-hb-primary rounded-pill">Instalar</button>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+        const ToastPOS = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+
+        function notificarToast(mensaje, icono = 'success') {
+            ToastPOS.fire({
+                icon: icono,
+                title: mensaje
+            });
+        }
+
+        function notificarModal(titulo, mensaje, icono = 'success', callback = null) {
+            Swal.fire({
+                title: titulo,
+                html: mensaje,
+                icon: icono,
+                confirmButtonColor: '#121214',
+                confirmButtonText: 'Entendido',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg',
+                    confirmButton: 'btn btn-hb-dark rounded-pill px-4 fw-bold'
+                }
+            }).then(() => {
+                if (callback) callback();
+            });
+        }
+
         function formatCOP(val) {
             if (!val && val !== 0) return '';
-            return Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
         function formatInputCOP(input) {
             let raw = input.value.replace(/\D/g, '');
             if (raw) {
-                input.value = parseInt(raw, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                input.value = parseInt(raw, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             } else {
                 input.value = '';
             }
         }
+    </script>
+    
+    <!-- PWA Service Worker & Install Logic -->
+    <script>
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // Lógica de Instalación PWA
+        let deferredPrompt;
+        const installToastEl = document.getElementById('pwa-install-toast');
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        if (installToastEl && installBtn) {
+            const toast = new bootstrap.Toast(installToastEl);
+            
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                // Mostrar el toast si el usuario no ha instalado la app
+                toast.show();
+            });
+
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to the install prompt: ${outcome}`);
+                    deferredPrompt = null;
+                    toast.hide();
+                }
+            });
+        }
+
+        // Highlight active Bottom Nav Item
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentPath = window.location.pathname;
+            const navItems = document.querySelectorAll('.bottom-nav .nav-item');
+            navItems.forEach(item => {
+                if (currentPath.includes(item.getAttribute('href'))) {
+                    item.classList.add('text-hb-accent');
+                    item.style.color = 'var(--color-accent)';
+                }
+            });
+        });
     </script>
 </body>
 </html>

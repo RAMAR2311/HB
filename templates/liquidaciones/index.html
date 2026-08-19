@@ -1,0 +1,548 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-0 px-md-3">
+    <!-- Header Superior -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="fw-extrabold text-dark m-0" style="letter-spacing: -0.02em;">
+                <i class="fa-solid fa-hand-holding-dollar text-warning me-2"></i>Liquidaciones & Control Especial
+            </h2>
+            <p class="text-muted small m-0">Registro y reportes de <b>Propinas</b>, <b>Botellaje</b> y <b>Cortesías / Regalos</b></p>
+        </div>
+
+        <!-- Filtro de Fecha Rápido -->
+        <form method="GET" action="{{ url_for('liquidaciones_bp.index') }}" class="d-flex align-items-center gap-2 flex-wrap bg-white p-2 rounded-4 shadow-sm border">
+            <input type="hidden" name="tab" id="form_tab_activo" value="{{ tab_activo }}">
+            
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="{{ url_for('liquidaciones_bp.index', filtro='turno_actual', tab=tab_activo) }}" class="btn {% if filtro == 'turno_actual' %}btn-dark fw-bold{% else %}btn-light text-muted{% endif %} rounded-pill px-3" style="border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">Turno Abierto</a>
+                <a href="{{ url_for('liquidaciones_bp.index', filtro='hoy', tab=tab_activo) }}" class="btn {% if filtro == 'hoy' %}btn-dark fw-bold{% else %}btn-light text-muted{% endif %} px-3" style="border-radius: 0 !important;">Día (Hoy)</a>
+                <a href="{{ url_for('liquidaciones_bp.index', filtro='semana', tab=tab_activo) }}" class="btn {% if filtro == 'semana' %}btn-dark fw-bold{% else %}btn-light text-muted{% endif %} px-3" style="border-radius: 0 !important;">Esta Semana</a>
+                <a href="{{ url_for('liquidaciones_bp.index', filtro='mes', tab=tab_activo) }}" class="btn {% if filtro == 'mes' %}btn-dark fw-bold{% else %}btn-light text-muted{% endif %} rounded-pill px-3" style="border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important;">Este Mes</a>
+            </div>
+
+            <div class="d-flex align-items-center gap-1 ms-md-2">
+                <input type="date" name="fecha_inicio" class="form-control form-control-sm border bg-light fw-bold" value="{{ dt_inicio.strftime('%Y-%m-%d') }}">
+                <span class="text-muted small">a</span>
+                <input type="date" name="fecha_fin" class="form-control form-control-sm border bg-light fw-bold" value="{{ dt_fin.strftime('%Y-%m-%d') }}">
+                <input type="hidden" name="filtro" value="personalizado">
+                <button type="submit" class="btn btn-sm btn-warning rounded-pill px-3 fw-bold shadow-sm">
+                    <i class="fa-solid fa-filter me-1"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <ul class="nav nav-pills gap-2 mb-4 bg-white p-2 rounded-4 shadow-sm border" id="liquidacionesTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill fw-bold px-4 py-2 {% if tab_activo == 'botellaje' %}active bg-dark text-warning{% else %}text-dark{% endif %}" id="tab-botellaje-btn" data-bs-toggle="pill" data-bs-target="#tab-botellaje" type="button" role="tab" onclick="setTabParam('botellaje')">
+                <i class="fa-solid fa-wine-bottle me-2 text-danger"></i>Botellaje
+                <span class="badge bg-warning text-dark ms-1">${{ "{:,.0f}".format(total_botellaje_acumulado).replace(',', '.') }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill fw-bold px-4 py-2 {% if tab_activo == 'propinas' %}active bg-dark text-warning{% else %}text-dark{% endif %}" id="tab-propinas-btn" data-bs-toggle="pill" data-bs-target="#tab-propinas" type="button" role="tab" onclick="setTabParam('propinas')">
+                <i class="fa-solid fa-hand-holding-heart me-2 text-success"></i>Propinas
+                <span class="badge bg-success text-white ms-1">${{ "{:,.0f}".format(total_propina_acumulada).replace(',', '.') }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill fw-bold px-4 py-2 {% if tab_activo == 'cortesias' %}active bg-dark text-warning{% else %}text-dark{% endif %}" id="tab-cortesias-btn" data-bs-toggle="pill" data-bs-target="#tab-cortesias" type="button" role="tab" onclick="setTabParam('cortesias')">
+                <i class="fa-solid fa-gift me-2 text-primary"></i>Cortesías & Regalos
+                <span class="badge bg-primary text-white ms-1">{{ total_cortesias_count }} ítems</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill fw-bold px-4 py-2 {% if tab_activo == 'beneficiarios' %}active bg-dark text-warning{% else %}text-dark{% endif %}" id="tab-beneficiarios-btn" data-bs-toggle="pill" data-bs-target="#tab-beneficiarios" type="button" role="tab" onclick="setTabParam('beneficiarios')">
+                <i class="fa-solid fa-users-gear me-2 text-info"></i>Catálogo de Beneficiarios
+                <span class="badge bg-light text-dark ms-1">{{ beneficiarios_catalogo|length }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="liquidacionesTabsContent">
+        <!-- ==================== TAB 1: BOTELLAJE ==================== -->
+        <div class="tab-pane fade {% if tab_activo == 'botellaje' %}show active{% endif %}" id="tab-botellaje" role="tabpanel">
+            <!-- Métricas Clave Botellaje -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6 col-xl-4">
+                    <div class="card-custom p-3 border-start border-warning border-4 shadow-sm bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted fw-bold d-block">TOTAL BOTELLAJE A LIQUIDAR</small>
+                                <h3 class="fw-extrabold text-dark m-0">${{ "{:,.0f}".format(total_botellaje_acumulado).replace(',', '.') }}</h3>
+                            </div>
+                            <div class="bg-warning bg-opacity-25 text-warning p-3 rounded-circle">
+                                <i class="fa-solid fa-hand-holding-dollar fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card-custom p-3 border-start border-danger border-4 shadow-sm bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted fw-bold d-block">TOTAL BOTELLAS VENDIDAS</small>
+                                <h3 class="fw-extrabold text-dark m-0">{{ total_botellas_count }} <span class="fs-6 text-muted font-monospace">unidades</span></h3>
+                            </div>
+                            <div class="bg-danger bg-opacity-25 text-danger p-3 rounded-circle">
+                                <i class="fa-solid fa-wine-bottle fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen por Mesero -->
+            <div class="card-custom p-4 shadow-sm bg-white mb-4">
+                <h5 class="fw-extrabold text-dark mb-3"><i class="fa-solid fa-user-check text-warning me-2"></i>Comisiones por Mesero</h5>
+                <div class="row g-3">
+                    {% for m in resumen_botellaje_mesero %}
+                    <div class="col-md-4 col-lg-3">
+                        <div class="p-3 bg-light rounded-4 border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark">{{ m.nombre }}</span>
+                                <span class="badge bg-dark">{{ m.botellas }} botellas</span>
+                            </div>
+                            <div class="fw-extrabold text-success fs-5">
+                                ${{ "{:,.0f}".format(m.total_comision).replace(',', '.') }}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12 text-muted text-center py-3">No hay registros de botellaje en el rango de fechas seleccionado.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Tabla Detallada de Botellaje -->
+            <div class="card-custom p-4 shadow-sm bg-white">
+                <h5 class="fw-extrabold text-dark mb-3"><i class="fa-solid fa-list-ul text-muted me-2"></i>Detalle de Botellas Vendidas con Comisión</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr class="small text-muted">
+                                <th>Fecha / Hora</th>
+                                <th>Mesero</th>
+                                <th>Venta #ID</th>
+                                <th>Mesa / Caja</th>
+                                <th>Producto</th>
+                                <th class="text-center">Cant.</th>
+                                <th class="text-end">Comisión / Botella</th>
+                                <th class="text-end">Total Liquidar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in detalles_botellaje %}
+                            <tr>
+                                <td>{{ d.venta.fecha_venta.strftime('%d/%m/%Y %I:%M %p') }}</td>
+                                <td><span class="badge bg-light text-dark fw-bold border"><i class="fa-solid fa-user-tie me-1 text-primary"></i>{{ d.venta.mesero.nombre if d.venta.mesero else 'Sin Mesero' }}</span></td>
+                                <td><a href="{{ url_for('sales_bp.imprimir_ticket', sale_id=d.venta.id) }}" target="_blank" class="fw-bold text-decoration-none">#{{ d.venta.id }}</a></td>
+                                <td>{{ d.venta.mesa.nombre if d.venta.mesa else 'Directa (Caja)' }}</td>
+                                <td class="fw-semibold">{{ d.producto.nombre if d.producto else (d.nombre_manual or 'Botella') }}</td>
+                                <td class="text-center fw-bold">{{ d.cantidad_vendida }}</td>
+                                <td class="text-end">${{ "{:,.0f}".format(d.botellaje_unitario).replace(',', '.') }}</td>
+                                <td class="text-end fw-extrabold text-success">${{ "{:,.0f}".format(d.botellaje_unitario * d.cantidad_vendida).replace(',', '.') }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">No hay botellas vendidas con comisión en este período.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: PROPINAS ==================== -->
+        <div class="tab-pane fade {% if tab_activo == 'propinas' %}show active{% endif %}" id="tab-propinas" role="tabpanel">
+            <div class="row g-3 mb-4">
+                <div class="col-md-6 col-xl-4">
+                    <div class="card-custom p-3 border-start border-success border-4 shadow-sm bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted fw-bold d-block">TOTAL PROPINAS RECAUDADAS</small>
+                                <h3 class="fw-extrabold text-success m-0">${{ "{:,.0f}".format(total_propina_acumulada).replace(',', '.') }}</h3>
+                            </div>
+                            <div class="bg-success bg-opacity-25 text-success p-3 rounded-circle">
+                                <i class="fa-solid fa-hand-holding-heart fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card-custom p-3 border-start border-primary border-4 shadow-sm bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted fw-bold d-block">CUENTAS CON PROPINA</small>
+                                <h3 class="fw-extrabold text-dark m-0">{{ ventas_con_propina|length }} <span class="fs-6 text-muted font-monospace">órdenes</span></h3>
+                            </div>
+                            <div class="bg-primary bg-opacity-25 text-primary p-3 rounded-circle">
+                                <i class="fa-solid fa-receipt fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de Propinas por Mesero -->
+            <div class="card-custom p-4 shadow-sm bg-white mb-4">
+                <h5 class="fw-extrabold text-dark mb-3"><i class="fa-solid fa-users text-success me-2"></i>Distribución de Propinas por Mesero</h5>
+                <div class="row g-3">
+                    {% for p in resumen_propina_mesero %}
+                    <div class="col-md-4 col-lg-3">
+                        <div class="p-3 bg-light rounded-4 border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark">{{ p.nombre }}</span>
+                                <span class="badge bg-secondary">{{ p.ventas_count }} ventas</span>
+                            </div>
+                            <div class="fw-extrabold text-success fs-5">
+                                ${{ "{:,.0f}".format(p.total_propina).replace(',', '.') }}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12 text-muted text-center py-3">No hay propinas registradas en el período.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Tabla Detallada de Propinas -->
+            <div class="card-custom p-4 shadow-sm bg-white">
+                <h5 class="fw-extrabold text-dark mb-3"><i class="fa-solid fa-list-ul text-muted me-2"></i>Detalle de Propinas por Venta</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr class="small text-muted">
+                                <th>Fecha / Hora</th>
+                                <th>Venta #ID</th>
+                                <th>Mesa / Caja</th>
+                                <th>Mesero</th>
+                                <th class="text-end">Subtotal Cuenta</th>
+                                <th class="text-center">% Propina</th>
+                                <th class="text-end">Monto Propina</th>
+                                <th>Método de Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in ventas_con_propina %}
+                            <tr>
+                                <td>{{ v.fecha_venta.strftime('%d/%m/%Y %I:%M %p') }}</td>
+                                <td><a href="{{ url_for('sales_bp.imprimir_ticket', sale_id=v.id) }}" target="_blank" class="fw-bold text-decoration-none">#{{ v.id }}</a></td>
+                                <td>{{ v.mesa.nombre if v.mesa else 'Directa (Caja)' }}</td>
+                                <td><span class="badge bg-light text-dark fw-bold border"><i class="fa-solid fa-user-tie me-1 text-primary"></i>{{ v.mesero.nombre if v.mesero else 'Sin Mesero' }}</span></td>
+                                <td class="text-end">${{ "{:,.0f}".format(v.subtotal).replace(',', '.') }}</td>
+                                <td class="text-center"><span class="badge bg-success bg-opacity-25 text-success">{{ "{:,.0f}".format(v.porcentaje_propina) }}%</span></td>
+                                <td class="text-end fw-extrabold text-success">${{ "{:,.0f}".format(v.monto_propina).replace(',', '.') }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ v.metodo_pago_display }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">No hay propinas registradas en este período.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: CORTESÍAS & REGALOS ==================== -->
+        <div class="tab-pane fade {% if tab_activo == 'cortesias' %}show active{% endif %}" id="tab-cortesias" role="tabpanel">
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card-custom p-3 border-start border-primary border-4 shadow-sm bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted fw-bold d-block">TOTAL PRODUCTOS REGALADOS</small>
+                                <h3 class="fw-extrabold text-primary m-0">{{ total_cortesias_count }} <span class="fs-6 text-muted font-monospace">unidades</span></h3>
+                            </div>
+                            <div class="bg-primary bg-opacity-25 text-primary p-3 rounded-circle">
+                                <i class="fa-solid fa-gift fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card-custom p-3 border-start border-info border-4 shadow-sm bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted fw-bold d-block">VALOR COMERCIAL (PRECIO CARTA)</small>
+                                <h3 class="fw-extrabold text-dark m-0">${{ "{:,.0f}".format(total_valor_comercial_cortesias).replace(',', '.') }}</h3>
+                            </div>
+                            <div class="bg-info bg-opacity-25 text-info p-3 rounded-circle">
+                                <i class="fa-solid fa-tag fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card-custom p-3 border-start border-danger border-4 shadow-sm bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted fw-bold d-block">COSTO REAL ASUMIDO (BAR)</small>
+                                <h3 class="fw-extrabold text-danger m-0">${{ "{:,.0f}".format(total_costo_real_cortesias).replace(',', '.') }}</h3>
+                            </div>
+                            <div class="bg-danger bg-opacity-25 text-danger p-3 rounded-circle">
+                                <i class="fa-solid fa-coins fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen por Beneficiario -->
+            <div class="card-custom p-4 shadow-sm bg-white mb-4">
+                <h5 class="fw-extrabold text-dark mb-3"><i class="fa-solid fa-user-tag text-primary me-2"></i>Cortesías por Beneficiario</h5>
+                <div class="row g-3">
+                    {% for c in resumen_cortesias_beneficiario %}
+                    <div class="col-md-4 col-lg-3">
+                        <div class="p-3 bg-light rounded-4 border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark"><i class="fa-solid fa-user me-1 text-primary"></i>{{ c.beneficiario }}</span>
+                                <span class="badge bg-primary">{{ c.cantidad }} un.</span>
+                            </div>
+                            <div class="small text-muted">Valor Comercial: <b class="text-dark">${{ "{:,.0f}".format(c.valor_comercial).replace(',', '.') }}</b></div>
+                            <div class="small text-danger">Costo Bar: <b class="text-danger">${{ "{:,.0f}".format(c.costo_real).replace(',', '.') }}</b></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12 text-muted text-center py-3">No hay cortesías registradas en este período.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Tabla Detallada de Cortesías -->
+            <div class="card-custom p-4 shadow-sm bg-white">
+                <h5 class="fw-extrabold text-dark mb-3"><i class="fa-solid fa-list-ul text-muted me-2"></i>Historial de Cortesías Entregadas</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr class="small text-muted">
+                                <th>Fecha / Hora</th>
+                                <th>Venta #ID</th>
+                                <th>Mesa / Caja</th>
+                                <th>Producto Regalado</th>
+                                <th class="text-center">Cant.</th>
+                                <th>¿A quién se le dio? (Beneficiario)</th>
+                                <th>Atendido Por</th>
+                                <th class="text-end">Costo Bar</th>
+                                <th class="text-end">Valor Comercial</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in detalles_cortesias %}
+                            {% set prod = d.producto %}
+                            {% set precio_c = (prod.precio_sugerido if prod else 0) * d.cantidad_vendida %}
+                            {% set costo_b = (prod.precio_costo if prod else 0) * d.cantidad_vendida %}
+                            <tr>
+                                <td>{{ d.venta.fecha_venta.strftime('%d/%m/%Y %I:%M %p') }}</td>
+                                <td><a href="{{ url_for('sales_bp.imprimir_ticket', sale_id=d.venta.id) }}" target="_blank" class="fw-bold text-decoration-none">#{{ d.venta.id }}</a></td>
+                                <td>{{ d.venta.mesa.nombre if d.venta.mesa else 'Directa (Caja)' }}</td>
+                                <td class="fw-semibold">
+                                    <i class="fa-solid fa-gift text-primary me-1"></i>
+                                    {{ prod.nombre if prod else (d.nombre_manual or 'Producto') }}
+                                </td>
+                                <td class="text-center fw-bold">{{ d.cantidad_vendida }}</td>
+                                <td>
+                                    <span class="badge bg-success bg-opacity-25 text-success fw-bold fs-6">
+                                        <i class="fa-solid fa-user-check me-1"></i>{{ d.cortesia_para or 'No especificado' }}
+                                    </span>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ d.venta.vendedor.nombre if d.venta.vendedor else 'Caja' }}</span></td>
+                                <td class="text-end text-danger fw-bold">${{ "{:,.0f}".format(costo_b).replace(',', '.') }}</td>
+                                <td class="text-end text-muted fw-bold">${{ "{:,.0f}".format(precio_c).replace(',', '.') }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-muted">No se han registrado cortesías ni regalos en este período.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 4: CATÁLOGO DE BENEFICIARIOS ==================== -->
+        <div class="tab-pane fade {% if tab_activo == 'beneficiarios' %}show active{% endif %}" id="tab-beneficiarios" role="tabpanel">
+            <div class="card-custom p-4 shadow-sm bg-white">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+                    <div>
+                        <h5 class="fw-extrabold text-dark m-0"><i class="fa-solid fa-address-book text-info me-2"></i>Personas Autorizadas para Recibir Cortesías</h5>
+                        <small class="text-muted">Estos nombres aparecerán automáticamente en el botón de regalo 🎁 de la caja POS.</small>
+                    </div>
+                    <button type="button" class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm" onclick="abrirModalNuevoBeneficiario()">
+                        <i class="fa-solid fa-plus me-1 text-warning"></i> + Nuevo Beneficiario
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr class="small text-muted">
+                                <th>#</th>
+                                <th>Nombre Completo / Apodo</th>
+                                <th>Rol / Cargo / Observación</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in beneficiarios_catalogo %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td class="fw-bold text-dark fs-6"><i class="fa-solid fa-user me-2 text-primary"></i>{{ b.nombre }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ b.rol_cargo or 'Sin cargo' }}</span></td>
+                                <td class="text-center">
+                                    {% if b.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onclick="abrirModalEditarBeneficiario({{ b.id }}, '{{ b.nombre }}', '{{ b.rol_cargo or '' }}')">
+                                        <i class="fa-solid fa-pen-to-square"></i> Editar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold ms-1" onclick="eliminarBeneficiario({{ b.id }}, '{{ b.nombre }}')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">No hay beneficiarios registrados en el catálogo.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear / Editar Beneficiario -->
+<div class="modal fade" id="modalBeneficiario" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 p-3 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-extrabold text-dark" id="modalBeneficiarioTitulo">
+                    <i class="fa-solid fa-user-plus text-warning me-2"></i>Registrar Beneficiario
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="inputBeneficiarioId">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">Nombre o Apodo de la Persona:</label>
+                    <input type="text" id="inputBeneficiarioNombre" class="form-control bg-light border-0 fw-bold py-2" placeholder="Ej: DJ Andrés, Dueño, Barman Carlos, etc.">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">Rol / Cargo / Observación (Opcional):</label>
+                    <input type="text" id="inputBeneficiarioRol" class="form-control bg-light border-0 py-2" placeholder="Ej: Música & Animación, Barra, Amigo de la casa, etc.">
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-dark rounded-pill px-4 fw-bold" onclick="guardarBeneficiario()">
+                    <i class="fa-solid fa-save me-1 text-warning"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const csrf_token = "{{ csrf_token() }}";
+
+    function setTabParam(tabName) {
+        document.getElementById('form_tab_activo').value = tabName;
+    }
+
+    function abrirModalNuevoBeneficiario() {
+        document.getElementById('inputBeneficiarioId').value = '';
+        document.getElementById('inputBeneficiarioNombre').value = '';
+        document.getElementById('inputBeneficiarioRol').value = '';
+        document.getElementById('modalBeneficiarioTitulo').innerHTML = '<i class="fa-solid fa-user-plus text-warning me-2"></i>Registrar Beneficiario';
+        new bootstrap.Modal(document.getElementById('modalBeneficiario')).show();
+    }
+
+    function abrirModalEditarBeneficiario(id, nombre, rol) {
+        document.getElementById('inputBeneficiarioId').value = id;
+        document.getElementById('inputBeneficiarioNombre').value = nombre;
+        document.getElementById('inputBeneficiarioRol').value = rol;
+        document.getElementById('modalBeneficiarioTitulo').innerHTML = '<i class="fa-solid fa-user-pen text-primary me-2"></i>Editar Beneficiario';
+        new bootstrap.Modal(document.getElementById('modalBeneficiario')).show();
+    }
+
+    async function guardarBeneficiario() {
+        const id = document.getElementById('inputBeneficiarioId').value;
+        const nombre = document.getElementById('inputBeneficiarioNombre').value.trim();
+        const rol = document.getElementById('inputBeneficiarioRol').value.trim();
+
+        if (!nombre) {
+            notificarToast('El nombre del beneficiario es obligatorio.', 'warning');
+            return;
+        }
+
+        const url = id ? `/liquidaciones/api/beneficiarios/editar/${id}` : '/liquidaciones/api/beneficiarios/nuevo';
+
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf_token },
+                body: JSON.stringify({ nombre: nombre, rol_cargo: rol })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                notificarToast(data.mensaje || 'Guardado con éxito.', 'success');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                notificarToast(data.error || 'Error al guardar.', 'error');
+            }
+        } catch (e) {
+            notificarToast('Error de conexión con el servidor.', 'error');
+        }
+    }
+
+    async function eliminarBeneficiario(id, nombre) {
+        const conf = await Swal.fire({
+            title: `¿Eliminar "${nombre}"?`,
+            text: 'Se eliminará del catálogo de beneficiarios de cortesías.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!conf.isConfirmed) return;
+
+        try {
+            const res = await fetch(`/liquidaciones/api/beneficiarios/eliminar/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf_token }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                notificarToast('Beneficiario eliminado con éxito.', 'success');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                notificarToast(data.error || 'Error al eliminar.', 'error');
+            }
+        } catch (e) {
+            notificarToast('Error de conexión con el servidor.', 'error');
+        }
+    }
+</script>
+{% endblock %}

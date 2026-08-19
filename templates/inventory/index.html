@@ -1,176 +1,466 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-brand-black m-0">Inventario Central</h2>
-    <div class="d-flex gap-2">
-        <a href="/inventory/nuevo" class="btn btn-yellow rounded-pill px-4 fw-bold shadow-sm">
-            <i class="fa-solid fa-plus me-1"></i> Nuevo Producto
+<!-- ══════════════════════════ HEADER & ACCIONES ══════════════════════════ -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-black text-brand-black m-0 tracking-tight d-flex align-items-center">
+            <span class="p-2 bg-brand-orange text-white rounded-3 me-3 d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                <i class="fa-solid fa-beer-mug-empty fs-5"></i>
+            </span>
+            Inventario Bar & Comidas
+        </h2>
+        <p class="text-muted small mt-1 mb-0 ms-1">Control integral de stock, recetas de coctelería, insumos de cocina y combos</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        {% if current_user.rol == 'admin' %}
+        <button type="button" class="btn btn-light border rounded-pill px-3 py-2 fw-semibold text-secondary shadow-sm hover-elevate" data-bs-toggle="modal" data-bs-target="#importarModal">
+            <i class="fa-solid fa-file-excel text-success me-1"></i> Importar Excel
+        </button>
+        <a href="{{ url_for('inventory_bp.nuevo', tipo='combo') }}" class="btn btn-orange rounded-pill px-4 py-2 fw-bold shadow-sm hover-elevate">
+            <i class="fa-solid fa-layer-group me-1"></i> Armar Combo
+        </a>
+        {% endif %}
+        <a href="{{ url_for('inventory_bp.nuevo') }}" class="btn btn-yellow rounded-pill px-4 py-2 fw-bold shadow-sm hover-elevate">
+            <i class="fa-solid fa-plus me-1"></i> + Ingresar Producto
         </a>
     </div>
 </div>
 
+<!-- ══════════════════════════ METRICAS KPI DE BAR ══════════════════════════ -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card card-custom p-3 border-0 shadow-sm bg-white h-100 position-relative overflow-hidden">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle p-3 bg-light text-primary me-3 flex-shrink-0" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-boxes-stacked fs-5"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size: 0.75rem;">Total Catálogo</span>
+                    <h4 class="fw-bold text-dark m-0">{{ total_catalogo }} <small class="text-muted fs-6 fw-normal">ítems</small></h4>
+                </div>
+            </div>
+            <div class="position-absolute bottom-0 start-0 w-100 bg-primary opacity-25" style="height: 3px;"></div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card card-custom p-3 border-0 shadow-sm bg-white h-100 position-relative overflow-hidden">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle p-3 bg-light text-warning me-3 flex-shrink-0" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-layer-group fs-5 text-brand-orange"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size: 0.75rem;">Combos Activos</span>
+                    <h4 class="fw-bold text-dark m-0">{{ total_combos_global }} <small class="text-muted fs-6 fw-normal">paquetes</small></h4>
+                </div>
+            </div>
+            <div class="position-absolute bottom-0 start-0 w-100 bg-warning opacity-50" style="height: 3px;"></div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card card-custom p-3 border-0 shadow-sm bg-white h-100 position-relative overflow-hidden">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle p-3 bg-light text-success me-3 flex-shrink-0" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-vault fs-5"></i>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size: 0.75rem;">Valor Inventario (Costo)</span>
+                    <h4 class="fw-bold text-dark m-0">${{ (valor_costo)|cop }}</h4>
+                </div>
+            </div>
+            <div class="position-absolute bottom-0 start-0 w-100 bg-success opacity-25" style="height: 3px;"></div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <a href="{% if filtro_alerta == '1' %}{{ url_for('inventory_bp.index') }}{% else %}{{ url_for('inventory_bp.index', alerta='1') }}{% endif %}" class="text-decoration-none d-block h-100">
+            <div class="card card-custom p-3 border-0 shadow-sm bg-white h-100 position-relative overflow-hidden" style="cursor: pointer; {% if filtro_alerta == '1' %}outline: 3px solid #dc3545; box-shadow: 0 0 10px rgba(220,53,69,0.3);{% endif %}">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle p-3 {% if total_alertas_global > 0 %}bg-danger text-white{% else %}bg-light text-muted{% endif %} me-3 flex-shrink-0" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-triangle-exclamation fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small text-uppercase fw-bold" style="font-size: 0.75rem;">Alertas Stock Bajo</span>
+                        <h4 class="fw-bold {% if total_alertas_global > 0 %}text-danger{% else %}text-dark{% endif %} m-0">
+                            {{ total_alertas_global }} <small class="text-muted fs-6 fw-normal">críticos</small>
+                        </h4>
+                    </div>
+                </div>
+                <div class="position-absolute bottom-0 start-0 w-100 {% if total_alertas_global > 0 %}bg-danger{% else %}bg-secondary opacity-25{% endif %}" style="height: 3px;"></div>
+            </div>
+        </a>
+    </div>
+</div>
 
-<!-- Buscador Rápido de Inventario -->
+{% if filtro_alerta == '1' %}
+<div class="alert alert-danger rounded-4 border-0 shadow-sm d-flex justify-content-between align-items-center mb-4 p-3 animate__animated animate__fadeIn">
+    <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle bg-danger text-white p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+            <strong class="text-danger d-block">Filtrando por Alertas de Stock Mínimo</strong>
+            <span class="text-dark small">Mostrando únicamente los <strong>{{ total_productos }}</strong> producto(s) con existencias bajas o críticas en el negocio.</span>
+        </div>
+    </div>
+    <a href="{{ url_for('inventory_bp.index') }}" class="btn btn-sm btn-outline-danger rounded-pill fw-bold px-3">
+        <i class="fa-solid fa-xmark me-1"></i> Ver Todos los Productos
+    </a>
+</div>
+{% endif %}
+
+<!-- ══════════════════════════ BARRA DE BUSQUEDA Y FILTROS DESPLEGABLES ══════════════════════════ -->
 <div class="card card-custom p-3 mb-4 border-0 shadow-sm bg-white">
-    <div class="row align-items-center">
-        <div class="col-md-6 col-lg-5 position-relative">
-            <div class="input-group input-group-lg shadow-sm rounded-pill border">
-                <span class="input-group-text bg-white border-0 ps-4"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                <input type="text" id="inventarioSearch" class="form-control border-0 bg-white shadow-none ps-2" placeholder="Busca por SKU o Nombre del producto..." autocomplete="off" style="border-radius: 0 50px 50px 0;">
-                <button class="btn btn-light border-0 px-3 text-muted" type="button" id="clearSearch" title="Limpiar búsqueda" style="border-radius: 0 50px 50px 0;">
+    <div class="row align-items-center g-3">
+        <!-- 1. Buscador Rápido -->
+        <div class="col-lg-4 col-md-12 position-relative">
+            <div class="input-group rounded-pill border bg-light shadow-none">
+                <span class="input-group-text bg-transparent border-0 ps-3 text-muted">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" id="inventarioSearch" class="form-control border-0 bg-transparent shadow-none py-2" placeholder="Buscar por SKU, nombre, ingrediente..." autocomplete="off">
+                <button class="btn btn-link border-0 text-muted px-3 text-decoration-none" type="button" id="clearSearch" title="Limpiar">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <!-- Contenedor para resultados desplegables -->
-            <div id="searchDropdown" class="dropdown-menu shadow-lg border-0 w-100 p-0 mt-2 d-none" style="max-height: 400px; overflow-y: auto;">
+            <div id="searchDropdown" class="dropdown-menu shadow-lg border-0 w-100 p-0 mt-2 d-none" style="max-height: 400px; overflow-y: auto; z-index: 1050;"></div>
+        </div>
+
+        <!-- 2. Desplegable de Categoría -->
+        <div class="col-lg-3 col-md-6">
+            <div class="input-group rounded-pill border bg-light">
+                <span class="input-group-text bg-transparent border-0 ps-3 text-brand-orange">
+                    <i class="fa-solid fa-filter"></i>
+                </span>
+                <select id="selectCategoria" class="form-select border-0 bg-transparent py-2 fw-semibold text-dark shadow-none" style="cursor: pointer;">
+                    <option value="todas" {% if categoria_filtro == 'todas' %}selected{% endif %}>
+                        🌟 Todas las Categorías ({{ total_catalogo }})
+                    </option>
+                    {% for cat in categorias %}
+                        {% set c_id = cat.id|string %}
+                        {% set c_count = conteo_categorias.get(cat.id, 0) %}
+                        {% if 'Cerveza' in cat.nombre %}{% set icon = "🍺" %}{% set short = "Cervezas" %}
+                        {% elif 'Licor' in cat.nombre %}{% set icon = "🍾" %}{% set short = "Licores & Botellas" %}
+                        {% elif 'Cóctel' in cat.nombre or 'Coctel' in cat.nombre %}{% set icon = "🍸" %}{% set short = "Cócteles & Tragos" %}
+                        {% elif 'Comida' in cat.nombre or 'Platos' in cat.nombre %}{% set icon = "🍔" %}{% set short = "Comidas & Snacks" %}
+                        {% elif 'Alcohol' in cat.nombre or 'Bebida' in cat.nombre %}{% set icon = "🥤" %}{% set short = "Bebidas sin Alcohol" %}
+                        {% elif 'Combo' in cat.nombre %}{% set icon = "🎁" %}{% set short = "Combos" %}
+                        {% else %}{% set icon = "🌿" %}{% set short = "Insumos de Barra" %}{% endif %}
+                        <option value="{{ cat.id }}" {% if categoria_filtro|string == c_id %}selected{% endif %}>
+                            {{ icon }} {{ short }} ({{ c_count }})
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
-        <div class="col-md-3 col-lg-4 text-center mt-3 mt-md-0">
-            <div class="btn-group shadow-sm rounded-pill p-1 bg-light border" role="group">
-                <a href="?tipo=insumo" class="btn btn-sm {% if tipo_filtro == 'insumo' %}btn-dark fw-bold rounded-pill shadow-sm{% else %}btn-light text-muted border-0{% endif %} px-3">Materias Primas</a>
-                <a href="?tipo=producto_final" class="btn btn-sm {% if tipo_filtro == 'producto_final' %}btn-dark fw-bold rounded-pill shadow-sm{% else %}btn-light text-muted border-0{% endif %} px-3">Menú (Precios)</a>
-                <a href="?tipo=todos" class="btn btn-sm {% if tipo_filtro == 'todos' %}btn-dark fw-bold rounded-pill shadow-sm{% else %}btn-light text-muted border-0{% endif %} px-3">Todos</a>
+
+        <!-- 3. Desplegable de Tipo de Ítem -->
+        <div class="col-lg-3 col-md-6">
+            <div class="input-group rounded-pill border bg-light">
+                <span class="input-group-text bg-transparent border-0 ps-3 text-warning">
+                    <i class="fa-solid fa-layer-group"></i>
+                </span>
+                <select id="selectTipo" class="form-select border-0 bg-transparent py-2 fw-semibold text-dark shadow-none" style="cursor: pointer;">
+                    <option value="todos" {% if tipo_filtro == 'todos' %}selected{% endif %}>📦 Todos los Tipos</option>
+                    <option value="productos" {% if tipo_filtro in ['producto_simple', 'productos'] %}selected{% endif %}>🍺 Productos Directos</option>
+                    <option value="preparados" {% if tipo_filtro in ['preparado', 'preparados'] %}selected{% endif %}>🍸 Cócteles / Platos</option>
+                    <option value="insumos" {% if tipo_filtro in ['insumo', 'insumos'] %}selected{% endif %}>🌿 Insumos de Barra</option>
+                </select>
             </div>
         </div>
-        <div class="col-md-3 col-lg-3 text-md-end mt-3 mt-md-0">
-            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem;">
-                Mostrando <span id="visibleCount" class="text-brand-orange">{{ productos|length }}</span>
-                de <strong>{{ total_productos }}</strong>
-                {% if paginacion.pages > 1 %}<span class="text-muted">&nbsp;· pág. {{ paginacion.page }}/{{ paginacion.pages }}</span>{% endif %}
-            </small>
+
+        <!-- 4. Contador de Resultados -->
+        <div class="col-lg-2 col-md-12 text-lg-end text-center">
+            <span class="badge bg-light text-muted border rounded-pill px-3 py-2 fw-semibold" style="font-size: 0.8rem;">
+                Mostrando <span id="visibleCount" class="text-brand-orange fw-bold">{{ productos|length }}</span> de {{ total_productos }}
+            </span>
         </div>
     </div>
 </div>
 
-<div class="card card-custom p-0 overflow-hidden">
+<!-- ══════════════════════════ TABLA DE INVENTARIO ══════════════════════════ -->
+<div class="card card-custom p-0 overflow-hidden shadow-sm border-0 bg-white">
     <div class="table-responsive">
-        <table class="table table-hover table-custom mb-0">
-            <thead class="bg-light">
-                <tr>
-                    <th width="120" class="ps-4">SKU</th>
-                    <th>PRODUCTO</th>
-                    {% if tipo_filtro != 'producto_final' %}
-                    <th width="150" class="text-center">STOCK</th>
-                    {% endif %}
-                    {% if tipo_filtro == 'todos' %}
-                    <th width="150" class="text-end">PRECIO COSTO</th>
-                    {% endif %}
-                    {% if tipo_filtro == 'todos' %}
-                    <th width="150" class="text-end">PRECIO MÍNIMO</th>
-                    {% endif %}
-                    {% if tipo_filtro != 'insumo' %}
-                    <th width="150" class="text-end pe-4">PRECIO</th>
-                    {% endif %}
-                    <th width="220" class="text-center">ACCIONES</th>
+        <table class="table table-hover align-middle mb-0" id="inventoryTable">
+            <thead class="bg-light border-bottom border-2">
+                <tr class="text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                    <th class="ps-4 py-3" width="120">SKU</th>
+                    <th class="py-3">PRODUCTO & CATEGORÍA</th>
+                    <th class="py-3" width="260">COMPOSICIÓN / TIPO</th>
+                    <th class="py-3 text-center" width="130">STOCK</th>
+                    <th class="py-3 text-end" width="130">COSTO</th>
+                    <th class="py-3 text-end pe-4" width="140">PRECIO VENTA</th>
+                    <th class="py-3 text-center" width="140">ACCIONES</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="border-top-0">
                 {% for p in productos %}
-                <tr>
-                    <td class="text-muted"><small><strong>{{ p.sku }}</strong></small></td>
-                    <td class="fw-semibold text-brand-black">{{ p.nombre }}</td>
-                    {% if tipo_filtro != 'producto_final' %}
-                    <td>
-                        <!-- Regla Estricta: Badge rojo si el stock <= 3 -->
-                        {% if p.total_stock <= 3 %}
-                            <span class="badge bg-danger rounded-pill px-3 py-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> {{ p.total_stock }} (Stock Bajo)</span>
-                        {% else %}
-                            <!-- Badge en Rosa Pastel para stock normal -->
-                            <span class="badge bg-brand-orange text-dark rounded-pill px-3 py-2 border">{{ p.total_stock }} uds</span>
-                        {% endif %}
+                <tr class="inventory-row">
+                    <!-- SKU -->
+                    <td class="ps-4">
+                        <span class="badge bg-light text-secondary border font-monospace px-2 py-1" style="font-size: 0.78rem;">
+                            {{ p.sku }}
+                        </span>
+                    </td>
 
-                        {% if p.variantes %}
-                            <div class="mt-2 text-muted" style="font-size: 0.85rem;">
-                                {% for v in p.variantes %}
-                                    <span class="badge bg-light text-dark border me-1 mb-1">{{ v.nombre_variante }}: {{ v.cantidad_stock }}</span>
-                                {% endfor %}
+                    <!-- Producto & Categoría con Miniatura de Imagen -->
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="flex-shrink-0" style="width: 44px; height: 44px;">
+                                {% if p.imagen %}
+                                    <img src="{{ url_for('static', filename='uploads/' ~ p.imagen) }}" alt="{{ p.nombre }}" class="rounded-3 border w-100 h-100 shadow-sm" style="object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-3 border w-100 h-100 bg-light d-flex align-items-center justify-content-center shadow-none text-muted" style="font-size: 1.25rem;">
+                                        {% if p.es_combo or (p.categoria and 'Combo' in p.categoria.nombre) %}🎁
+                                        {% elif 'Cerveza' in (p.categoria.nombre if p.categoria else '') %}🍺
+                                        {% elif 'Licor' in (p.categoria.nombre if p.categoria else '') %}🍾
+                                        {% elif 'Cóctel' in (p.categoria.nombre if p.categoria else '') or 'Coctel' in (p.categoria.nombre if p.categoria else '') %}🍸
+                                        {% elif 'Comida' in (p.categoria.nombre if p.categoria else '') %}🍔
+                                        {% elif 'Alcohol' in (p.categoria.nombre if p.categoria else '') %}🥤
+                                        {% elif 'Combo' in (p.categoria.nombre if p.categoria else '') %}🎁
+                                        {% else %}🌿{% endif %}
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
+                            <div>
+                                <div class="fw-bold text-dark fs-6">{{ p.nombre }}</div>
+                                <div class="d-flex align-items-center gap-1 mt-1">
+                                    {% if p.categoria %}
+                                        <span class="badge bg-light text-muted border" style="font-weight: 500; font-size: 0.72rem;">
+                                            {% if 'Cerveza' in p.categoria.nombre %}🍺 Cervezas
+                                            {% elif 'Licor' in p.categoria.nombre %}🍾 Licores
+                                            {% elif 'Cóctel' in p.categoria.nombre or 'Coctel' in p.categoria.nombre %}🍸 Coctelería
+                                            {% elif 'Comida' in p.categoria.nombre %}🍔 Cocina
+                                            {% elif 'Alcohol' in p.categoria.nombre %}🥤 Sin Alcohol
+                                            {% elif 'Combo' in p.categoria.nombre %}🎁 Combos
+                                            {% else %}🌿 Insumos{% endif %}
+                                        </span>
+                                    {% endif %}
+                                    {% if p.observacion %}
+                                        <span class="text-muted small text-truncate d-none d-md-inline" style="max-width: 220px;" title="{{ p.observacion }}">
+                                            · {{ p.observacion }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </td>
-                    {% endif %}
-                    
-                    {% if tipo_filtro == 'todos' %}
-                    <td class="text-end fw-bold" style="color: var(--brand-orange);">
-                        {% if p.rango_costos %}
-                            {% if p.rango_costos is number %}
-                                ${{ (p.rango_costos)|cop }}
-                            {% else %}
-                                <div class="small text-muted fw-normal" style="line-height:1;">Desde</div>
-                                ${{ (p.rango_costos[0])|cop }}
-                                <div class="small text-muted fw-normal mt-1" style="line-height:1;">hasta</div>
-                                ${{ (p.rango_costos[1])|cop }}
+
+                    <!-- Composición / Tipo (Colapsable interactivo con flecha) -->
+                    <td>
+                        {% if p.es_combo %}
+                            <div>
+                                <button class="btn btn-sm btn-outline-warning border text-dark fw-bold rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 shadow-none transition-all" 
+                                        type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#compCollapse{{ p.id }}" 
+                                        aria-expanded="false" 
+                                        aria-controls="compCollapse{{ p.id }}">
+                                    <i class="fa-solid fa-layer-group text-warning me-1"></i> Combo ({{ p.recetas|length }} prods)
+                                    <i class="fa-solid fa-chevron-down ms-1 chevron-icon transition-all" style="font-size: 0.7rem;"></i>
+                                </button>
+                            </div>
+                            {% if p.recetas %}
+                            <div class="collapse mt-2" id="compCollapse{{ p.id }}">
+                                <div class="small bg-light p-2 rounded-3 border text-muted shadow-sm" style="font-size: 0.78rem; line-height: 1.4; max-width: 290px;">
+                                    <div class="text-uppercase text-muted fw-bold mb-1 d-flex align-items-center justify-content-between" style="font-size: 0.68rem;">
+                                        <span><i class="fa-solid fa-box-open me-1"></i>Contenido del Combo:</span>
+                                    </div>
+                                    {% for r in p.recetas %}
+                                        <div class="d-flex justify-content-between py-1 border-bottom border-light">
+                                            <span>• {{ r.insumo.nombre if r.insumo else 'Ítem' }}</span>
+                                            <strong class="badge bg-white text-dark border ms-2">{{ "%.0f"|format(r.cantidad_requerida|float) if r.cantidad_requerida == r.cantidad_requerida|int else r.cantidad_requerida }}x</strong>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                             {% endif %}
-                        {% else %}
-                            ${{ (p.precio_costo)|cop }}
-                        {% endif %}
-                    </td>
-                    {% endif %}
-                    
-                    {% if tipo_filtro == 'todos' %}
-                    <td class="text-end text-muted fw-bold">
-                        {% if p.rango_minimos %}
-                            {% if p.rango_minimos is number %}
-                                ${{ (p.rango_minimos)|cop }}
-                            {% else %}
-                                <div class="small text-muted fw-normal" style="line-height:1;">Desde</div>
-                                ${{ (p.rango_minimos[0])|cop }}
-                                <div class="small text-muted fw-normal mt-1" style="line-height:1;">hasta</div>
-                                ${{ (p.rango_minimos[1])|cop }}
+                        {% elif p.es_preparado %}
+                            <div>
+                                <button class="btn btn-sm btn-outline-info border text-dark fw-bold rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 shadow-none transition-all" 
+                                        type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#compCollapse{{ p.id }}" 
+                                        aria-expanded="false" 
+                                        aria-controls="compCollapse{{ p.id }}">
+                                    <i class="fa-solid fa-martini-glass-citrus text-info me-1"></i> Receta ({{ p.recetas|length }} insumos)
+                                    <i class="fa-solid fa-chevron-down ms-1 chevron-icon transition-all" style="font-size: 0.7rem;"></i>
+                                </button>
+                            </div>
+                            {% if p.recetas %}
+                            <div class="collapse mt-2" id="compCollapse{{ p.id }}">
+                                <div class="small bg-light p-2 rounded-3 border text-muted shadow-sm" style="font-size: 0.78rem; line-height: 1.4; max-width: 290px;">
+                                    <div class="text-uppercase text-muted fw-bold mb-1 d-flex align-items-center justify-content-between" style="font-size: 0.68rem;">
+                                        <span><i class="fa-solid fa-mortar-pestle me-1"></i>Ingredientes de Receta:</span>
+                                    </div>
+                                    {% for r in p.recetas %}
+                                        <div class="d-flex justify-content-between py-1 border-bottom border-light">
+                                            <span>• {{ r.insumo.nombre if r.insumo else 'Insumo' }}</span>
+                                            <strong class="badge bg-white text-dark border ms-2">
+                                                {{ "%.2f"|format(r.cantidad_requerida|float) if (r.cantidad_requerida|float % 1 != 0) else "%.0f"|format(r.cantidad_requerida|float) }} {{ r.insumo.unidad_medida_display if r.insumo else '' }}
+                                            </strong>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                             {% endif %}
+                        {% elif p.es_insumo %}
+                            <span class="badge bg-secondary-subtle text-secondary border px-3 py-1 rounded-pill" style="font-size: 0.75rem;">
+                                <i class="fa-solid fa-leaf text-success me-1"></i>Insumo ({{ p.unidad_medida_display }})
+                            </span>
                         {% else %}
-                            ${{ (p.precio_minimo)|cop }}
+                            <span class="badge bg-success-subtle text-success border border-success px-3 py-1 rounded-pill" style="font-size: 0.75rem;">
+                                <i class="fa-solid fa-beer-mug-empty me-1"></i>Producto Directo
+                            </span>
                         {% endif %}
                     </td>
-                    {% endif %}
-                    
-                    {% if tipo_filtro != 'insumo' %}
-                    <td class="text-end fw-bold text-brand-black pe-4">
-                        {% if p.rango_precios %}
-                            {% if p.rango_precios is number %}
-                                ${{ (p.rango_precios)|cop }}
-                            {% else %}
-                                <div class="small text-muted fw-normal" style="line-height:1;">Desde</div>
-                                ${{ (p.rango_precios[0])|cop }}<br>
-                                <div class="small text-muted fw-normal mt-1" style="line-height:1;">hasta</div>
-                                ${{ (p.rango_precios[1])|cop }}
-                            {% endif %}
-                        {% else %}
-                            ${{ (p.precio_sugerido)|cop }}
-                        {% endif %}
-                    </td>
-                    {% endif %}
-                    
+
+                    <!-- Stock Disponible (Calculado para combos/recetas, físico para directos) -->
                     <td class="text-center">
-                        {% if tipo_filtro == 'todos' %}
-                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill hover-primary me-1" title="Subcategorías (Variantes)" data-bs-toggle="modal" data-bs-target="#variantesModal{{ p.id }}">
-                            <i class="fa-solid fa-sitemap me-1"></i> Subcategorías
-                        </button>
+                        {% if p.es_combo %}
+                            {% set stock_combo = p.stock_disponible_calculado %}
+                            {% if stock_combo <= 0 %}
+                                <span class="badge bg-danger text-white rounded-pill px-3 py-1 shadow-sm" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-ban me-1"></i>0 combos
+                                </span>
+                                <div class="text-danger small fw-bold mt-1" style="font-size: 0.68rem;">Agotado</div>
+                            {% elif stock_combo <= 5 %}
+                                <span class="badge bg-warning text-dark border rounded-pill px-3 py-1 fw-bold shadow-sm" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i>{{ stock_combo }} combos
+                                </span>
+                                <div class="text-danger small fw-bold mt-1" style="font-size: 0.68rem;">Stock Crítico</div>
+                            {% else %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary rounded-pill px-3 py-1 fw-bold" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-boxes-stacked me-1"></i>{{ stock_combo }} combos
+                                </span>
+                                <div class="text-muted small mt-1" style="font-size: 0.68rem;">Armables</div>
+                            {% endif %}
+                        {% elif p.es_preparado %}
+                            {% set stock_prep = p.stock_disponible_calculado %}
+                            {% if stock_prep <= 0 %}
+                                <span class="badge bg-danger text-white rounded-pill px-3 py-1 shadow-sm" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-ban me-1"></i>0 porc.
+                                </span>
+                                <div class="text-danger small fw-bold mt-1" style="font-size: 0.68rem;">Sin Insumos</div>
+                            {% elif stock_prep <= 5 %}
+                                <span class="badge bg-warning text-dark border rounded-pill px-3 py-1 fw-bold shadow-sm" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i>{{ stock_prep }} porc.
+                                </span>
+                                <div class="text-danger small fw-bold mt-1" style="font-size: 0.68rem;">Stock Crítico</div>
+                            {% else %}
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info rounded-pill px-3 py-1 fw-bold" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-martini-glass me-1"></i>{{ stock_prep }} porc.
+                                </span>
+                                <div class="text-muted small mt-1" style="font-size: 0.68rem;">Disponibles</div>
+                            {% endif %}
+                        {% else %}
+                            {% set u_med = p.unidad_medida_display %}
+                            {% set st_val = "%.2f"|format(p.total_stock|float) if (p.total_stock|float % 1 != 0) else "%.0f"|format(p.total_stock|float) %}
+                            {% if p.total_stock <= 0 %}
+                                <span class="badge bg-danger text-white rounded-pill px-3 py-1 shadow-sm" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-ban me-1"></i>0 {{ u_med }}
+                                </span>
+                                <div class="text-danger small fw-bold mt-1" style="font-size: 0.68rem;">Agotado</div>
+                            {% elif p.es_bajo_stock %}
+                                <span class="badge bg-warning text-dark border rounded-pill px-3 py-1 fw-bold shadow-sm" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i>{{ st_val }} {{ u_med }}
+                                </span>
+                                <div class="text-danger small fw-bold mt-1" style="font-size: 0.68rem;">Stock Bajo</div>
+                            {% else %}
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-1 fw-bold" style="font-size: 0.8rem;">
+                                    {{ st_val }} {{ u_med }}
+                                </span>
+                            {% endif %}
+
+                            {% if p.variantes %}
+                                <div class="mt-1 text-muted" style="font-size: 0.75rem;">
+                                    {% for v in p.variantes %}
+                                        <span class="badge bg-light text-dark border me-1 mb-1">{{ v.nombre_variante }}: {{ "%.2f"|format(v.cantidad_stock|float) if (v.cantidad_stock|float % 1 != 0) else "%.0f"|format(v.cantidad_stock|float) }} {{ u_med }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         {% endif %}
-                        
-                        {% if tipo_filtro != 'producto_final' %}
-                        <a href="{{ url_for('inventory_bp.ver_producto', id=p.id) }}" class="btn btn-sm btn-outline-info rounded-pill hover-primary me-1" title="Ver Detalle">
-                            <i class="fa-solid fa-eye"></i>
-                        </a>
+                    </td>
+
+                    <!-- Precio Costo -->
+                    <td class="text-end fw-semibold text-secondary">
+                        {% if p.es_combo %}
+                            <span class="text-muted small">-</span>
+                        {% else %}
+                            {% if p.rango_costos %}
+                                {% if p.rango_costos is number %}
+                                    ${{ (p.rango_costos)|cop }}
+                                {% else %}
+                                    <div class="small text-muted" style="font-size: 0.7rem;">Desde</div>
+                                    ${{ (p.rango_costos[0])|cop }}
+                                {% endif %}
+                            {% else %}
+                                ${{ (p.precio_costo)|cop }}
+                            {% endif %}
                         {% endif %}
-                        <!-- Enlace dinámico con ID insertado (Jinja2 url_for) -->
-                        <a href="{{ url_for('inventory_bp.editar_producto', id=p.id) }}" class="btn btn-sm text-secondary hover-primary me-1" title="Editar">
-                            <i class="fa-solid fa-pen"></i>
-                        </a>
-                        <form method="POST" action="{{ url_for('inventory_bp.eliminar_producto', id=p.id) }}" class="d-inline" onsubmit="return confirm('ATENCIÓN: ¿Está seguro de que desea ELIMINAR PERMANENTEMENTE este producto del sistema en la Nube? Esto no se puede deshacer.');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm text-danger hover-danger" title="Eliminar Producto">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </form>
+                    </td>
+
+                    <!-- Precio Venta -->
+                    <td class="text-end pe-4">
+                        {% if p.es_insumo %}
+                            <span class="badge bg-light text-muted border">Insumo</span>
+                        {% else %}
+                            <span class="fw-black text-dark fs-6">
+                                {% if p.rango_precios %}
+                                    {% if p.rango_precios is number %}
+                                        ${{ (p.rango_precios)|cop }}
+                                    {% else %}
+                                        ${{ (p.rango_precios[0])|cop }}
+                                    {% endif %}
+                                {% else %}
+                                    ${{ (p.precio_sugerido)|cop }}
+                                {% endif %}
+                            </span>
+                            {% if p.tiene_botellaje %}
+                                <div class="mt-1">
+                                    <span class="badge bg-success-subtle text-success border border-success px-2 py-1" style="font-size: 0.68rem;" title="Comisión que gana el mesero por vender esta botella/producto">
+                                        <i class="fa-solid fa-hand-holding-dollar me-1"></i>Botellaje: ${{ (p.comision_mesero)|cop }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+
+                    <!-- Acciones: Trazabilidad, Editar, Eliminar -->
+                    <td class="text-center">
+                        <div class="d-inline-flex gap-1 align-items-center">
+                            <!-- 1. Trazabilidad del Inventario / Kardex -->
+                            <a href="{{ url_for('inventory_bp.ver_producto', id=p.id) }}" class="btn btn-sm btn-light border rounded-circle shadow-none" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="Trazabilidad y Kardex">
+                                <i class="fa-solid fa-clock-rotate-left text-info"></i>
+                            </a>
+                            
+                            {% if current_user.rol == 'admin' %}
+                            <!-- 2. Editar Producto -->
+                            <a href="{{ url_for('inventory_bp.editar_producto', id=p.id) }}" class="btn btn-sm btn-light border rounded-circle shadow-none" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="Editar">
+                                <i class="fa-solid fa-pen text-secondary"></i>
+                            </a>
+                            
+                            <!-- 3. Eliminar Producto -->
+                            <form method="POST" action="{{ url_for('inventory_bp.eliminar_producto', id=p.id) }}" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este ítem del inventario?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-light border rounded-circle text-danger shadow-none" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;" title="Eliminar">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center py-5 text-muted">
-                        <!-- Icono en Rosa Pastel -->
-                        <i class="fa-solid fa-box-open fs-1 mb-3 text-brand-orange"></i>
-                        <p class="mb-0">El inventario está vacío.</p>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <div class="p-4">
+                            <i class="fa-solid fa-box-open fs-1 mb-3 text-brand-orange opacity-75"></i>
+                            <h5 class="fw-bold text-dark">No se encontraron productos</h5>
+                            <p class="text-muted small mb-3">No hay ítems registrados bajo esta categoría o filtro.</p>
+                            <a href="{{ url_for('inventory_bp.nuevo') }}" class="btn btn-yellow rounded-pill px-4 fw-bold">
+                                <i class="fa-solid fa-plus me-1"></i> Crear Primer Producto
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -179,26 +469,23 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════ PAGINACIÓN ════════════════════════════════════ -->
+<!-- ══════════════════════════ PAGINACION ══════════════════════════ -->
 {% if paginacion.pages > 1 %}
 <nav aria-label="Paginación de inventario" class="mt-4">
     <ul class="pagination justify-content-center flex-wrap gap-1 mb-0">
-
-        <!-- Anterior -->
         <li class="page-item {% if not paginacion.has_prev %}disabled{% endif %}">
             <a class="page-link rounded-pill px-3 shadow-sm"
-               href="{% if paginacion.has_prev %}{{ url_for('inventory_bp.index', page=paginacion.prev_num) }}{% else %}#{% endif %}"
+               href="{% if paginacion.has_prev %}{{ url_for('inventory_bp.index', page=paginacion.prev_num, categoria=categoria_filtro, tipo=tipo_filtro, alerta=filtro_alerta) }}{% else %}#{% endif %}"
                aria-label="Anterior">
                 <i class="fa-solid fa-chevron-left"></i>
             </a>
         </li>
 
-        <!-- Páginas numeradas -->
         {% for p_num in paginacion.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
             {% if p_num %}
                 <li class="page-item {% if p_num == paginacion.page %}active{% endif %}">
                     <a class="page-link rounded-pill px-3 shadow-sm"
-                       href="{{ url_for('inventory_bp.index', page=p_num) }}">{{ p_num }}</a>
+                       href="{{ url_for('inventory_bp.index', page=p_num, categoria=categoria_filtro, tipo=tipo_filtro, alerta=filtro_alerta) }}">{{ p_num }}</a>
                 </li>
             {% else %}
                 <li class="page-item disabled">
@@ -207,24 +494,16 @@
             {% endif %}
         {% endfor %}
 
-        <!-- Siguiente -->
         <li class="page-item {% if not paginacion.has_next %}disabled{% endif %}">
             <a class="page-link rounded-pill px-3 shadow-sm"
-               href="{% if paginacion.has_next %}{{ url_for('inventory_bp.index', page=paginacion.next_num) }}{% else %}#{% endif %}"
+               href="{% if paginacion.has_next %}{{ url_for('inventory_bp.index', page=paginacion.next_num, categoria=categoria_filtro, tipo=tipo_filtro, alerta=filtro_alerta) }}{% else %}#{% endif %}"
                aria-label="Siguiente">
                 <i class="fa-solid fa-chevron-right"></i>
             </a>
         </li>
-
     </ul>
 </nav>
 {% endif %}
-<!-- ═══════════════════════════════════════════════════════════════════════════════════ -->
-
-<!-- Modales de Variantes generados fuera de la tabla para evitar cortes de interfaz -->
-{% for p in productos %}
-    {% include 'inventory/modal_variantes.html' %}
-{% endfor %}
 
 <!-- Modal para Importación Masiva -->
 <div class="modal fade" id="importarModal" tabindex="-1" aria-labelledby="importarModalLabel" aria-hidden="true">
@@ -240,16 +519,15 @@
                 </div>
                 <div class="modal-body p-4 text-center">
                     <i class="fa-solid fa-file-excel text-success d-block mb-3" style="font-size: 3rem;"></i>
-                    <p class="mb-4">Puedes registrar o actualizar docenas de productos simultáneamente subiendo un documento Excel <strong>(.xlsx)</strong> o <strong>CSV</strong>.</p>
+                    <p class="mb-4">Registra o actualiza productos simultáneamente subiendo un documento Excel <strong>(.xlsx)</strong> o <strong>CSV</strong>.</p>
                     
                     <a href="{{ url_for('inventory_bp.descargar_plantilla') }}" class="btn btn-outline-secondary rounded-pill fw-bold w-100 mb-4 text-start shadow-sm">
                         <i class="fa-solid fa-download ms-2 me-2"></i> 1. Descargar Plantilla de Ejemplo
                     </a>
 
                     <div class="text-start mb-2">
-                        <label class="form-label fw-bold">2. Subir archivo rellenado</label>
+                        <label class="form-label fw-bold">2. Subir archivo</label>
                         <input type="file" name="archivo" accept=".xlsx, .csv" class="form-control bg-light border-0 shadow-sm" required>
-                        <small class="text-muted d-block mt-2"><i class="fa-solid fa-circle-info text-info me-1"></i>Si el código SKU ya existe, su cantidad será <strong>SUMADA</strong> al inventario actual y se pisarán los precios.</small>
                     </div>
                 </div>
                 <div class="modal-footer border-0 bg-light rounded-bottom">
@@ -268,16 +546,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('inventarioSearch');
     const clearBtn = document.getElementById('clearSearch');
     const dropdown = document.getElementById('searchDropdown');
-    const tableRows = document.querySelectorAll('tbody tr:not(.no-results)');
+    const tableRows = document.querySelectorAll('tbody tr.inventory-row');
     const visibleCount = document.getElementById('visibleCount');
     const tbody = document.querySelector('tbody');
 
-    // Crear fila de "No hay resultados" si no existe
     const noResultsRow = document.createElement('tr');
     noResultsRow.className = 'no-results d-none';
     noResultsRow.innerHTML = `<td colspan="7" class="text-center py-5 text-muted">
         <i class="fa-solid fa-magnifying-glass-minus fs-1 mb-3 opacity-25"></i>
-        <p class="mb-0">No se encontraron productos que coincidan con tu búsqueda.</p>
+        <p class="mb-0 fw-semibold">No se encontraron productos que coincidan con tu búsqueda.</p>
     </td>`;
     tbody.appendChild(noResultsRow);
 
@@ -285,24 +562,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function performSearch() {
         const query = searchInput.value.toLowerCase().trim();
-        
-        // 1. Filtrado local de la tabla (lo que ya está cargado)
         let matches = 0;
         tableRows.forEach(row => {
-            const sku = row.cells[0].textContent.toLowerCase();
-            const nombre = row.cells[1].textContent.toLowerCase();
-            if (sku.includes(query) || nombre.includes(query)) {
+            const rowText = row.textContent.toLowerCase();
+            if (rowText.includes(query)) {
                 row.classList.remove('d-none');
                 matches++;
             } else {
                 row.classList.add('d-none');
             }
         });
-        visibleCount.textContent = matches;
+        if (visibleCount) visibleCount.textContent = matches;
         if (matches === 0 && query !== '') noResultsRow.classList.remove('d-none');
         else noResultsRow.classList.add('d-none');
 
-        // 2. Búsqueda AJAX global para el "despliegue"
         clearTimeout(debounceTimer);
         if (query.length < 2) {
             dropdown.classList.add('d-none');
@@ -340,7 +613,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     searchInput.addEventListener('input', performSearch);
 
-    // Ocultar dropdown al hacer click fuera
     document.addEventListener('click', (e) => {
         if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.classList.add('d-none');
@@ -355,6 +627,19 @@ document.addEventListener('DOMContentLoaded', function() {
         dropdown.classList.remove('show');
         searchInput.focus();
     });
+
+    // Eventos para listas desplegables de filtrado
+    const selectCategoria = document.getElementById('selectCategoria');
+    const selectTipo = document.getElementById('selectTipo');
+
+    function applyFilters() {
+        const cat = selectCategoria.value;
+        const tipo = selectTipo.value;
+        window.location.href = `{{ url_for('inventory_bp.index') }}?categoria=${encodeURIComponent(cat)}&tipo=${encodeURIComponent(tipo)}`;
+    }
+
+    if (selectCategoria) selectCategoria.addEventListener('change', applyFilters);
+    if (selectTipo) selectTipo.addEventListener('change', applyFilters);
 });
 </script>
 {% endblock %}

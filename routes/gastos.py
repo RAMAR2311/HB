@@ -11,11 +11,11 @@ gastos_bp = Blueprint('gastos_bp', __name__)
 @login_required
 def index():
     if request.method == 'POST':
-        tipo_gasto = request.form.get('tipo_gasto')
-        
-        # Validación por si el select no envía valor
-        if not tipo_gasto:
+        # Restricción de seguridad: no administradores solo pueden registrar gastos operacionales
+        if current_user.rol != 'admin':
             tipo_gasto = 'Gastos Operacionales'
+        else:
+            tipo_gasto = request.form.get('tipo_gasto') or 'Gastos Operacionales'
             
         categoria = request.form.get('categoria')
         descripcion = request.form.get('descripcion')
@@ -40,6 +40,12 @@ def index():
         else:
             fecha_obj = obtener_hora_bogota()
 
+        from models import Turno
+        turno_abierto = Turno.query.filter_by(estado='abierto').first()
+        if not turno_abierto:
+            flash('No hay un turno abierto. Debes abrir uno en la caja antes de registrar gastos.', 'danger')
+            return redirect(url_for('gastos_bp.index'))
+
         try:
             for monto, metodo in zip(montos, metodos_pago):
                 valor_float = float(monto)
@@ -51,7 +57,8 @@ def index():
                         descripcion=descripcion,
                         monto=valor_float,
                         metodo_pago=metodo,
-                        fecha_gasto=fecha_obj
+                        fecha_gasto=fecha_obj,
+                        turno_id=turno_abierto.id
                     )
                     db.session.add(nuevo_gasto)
             db.session.commit()
@@ -70,22 +77,10 @@ def index():
     
     hoy = obtener_hora_bogota()
     if not fecha_inicio_str or not fecha_fin_str:
-        if hoy.day >= 21:
-            start_date = hoy.replace(day=21, hour=0, minute=0, second=0, microsecond=0)
-            mes_siguiente = hoy.month + 1
-            año_siguiente = hoy.year
-            if mes_siguiente == 13:
-                mes_siguiente = 1
-                año_siguiente += 1
-            end_date = hoy.replace(year=año_siguiente, month=mes_siguiente, day=20, hour=23, minute=59, second=59)
-        else:
-            mes_anterior = hoy.month - 1
-            año_anterior = hoy.year
-            if mes_anterior == 0:
-                mes_anterior = 12
-                año_anterior -= 1
-            start_date = hoy.replace(year=año_anterior, month=mes_anterior, day=21, hour=0, minute=0, second=0, microsecond=0)
-            end_date = hoy.replace(day=20, hour=23, minute=59, second=59)
+        import calendar
+        start_date = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        ultimo_dia_num = calendar.monthrange(hoy.year, hoy.month)[1]
+        end_date = hoy.replace(day=ultimo_dia_num, hour=23, minute=59, second=59, microsecond=999999)
             
         fecha_inicio_str = start_date.strftime('%Y-%m-%d')
         fecha_fin_str = end_date.strftime('%Y-%m-%d')

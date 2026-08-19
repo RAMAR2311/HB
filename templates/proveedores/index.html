@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-0 px-md-3">
+    <!-- Header Superior -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main);">
+                <i class="fa-solid fa-truck-ramp-box fs-3" style="color: var(--color-secondary);"></i>
+            </div>
+            <div>
+                <h3 class="fw-extrabold text-dark m-0 font-heading" style="letter-spacing: -0.02em;">Gestión de Proveedores & Cuentas por Pagar</h3>
+                <p class="text-muted small m-0 font-body">Control consolidado de facturas, abonos y saldos de cuenta corriente.</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-hb-primary px-4 py-2 shadow-sm font-heading" data-bs-toggle="modal" data-bs-target="#modalNuevoProveedor">
+                <i class="fa-solid fa-plus me-2"></i> Nuevo Proveedor
+            </button>
+            <a href="/admin/dashboard" class="btn btn-outline-dark rounded-3 px-3 py-2 fw-bold font-heading" style="border: 2px solid var(--color-text-main);">
+                <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- KPIs de Deuda y Cuentas por Pagar -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Total Deuda Consolidada -->
+        <div class="col-6 col-lg-3">
+            <div class="p-3 rounded-3 bg-white h-100" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-primary) !important;">
+                <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.72rem;">DEUDA TOTAL CONSOLIDADA</small>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <span class="fs-4 fw-extrabold font-mono" style="color: var(--color-primary);">${{ (total_deuda_global)|cop }}</span>
+                    <i class="fa-solid fa-scale-unbalanced-flip fs-4 opacity-50 text-danger"></i>
+                </div>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">{{ proveedores_con_deuda }} proveedores con saldo pendiente</small>
+            </div>
+        </div>
+
+        <!-- 2. Total Facturado Acumulado -->
+        <div class="col-6 col-lg-3">
+            <div class="p-3 rounded-3 bg-white h-100" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-secondary) !important;">
+                <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.72rem;">TOTAL FACTURADO (COMPRAS)</small>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <span class="fs-4 fw-extrabold text-dark font-mono">${{ (total_facturado_global)|cop }}</span>
+                    <i class="fa-solid fa-file-invoice-dollar fs-4 opacity-50" style="color: var(--color-secondary);"></i>
+                </div>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">Facturas registradas en sistema</small>
+            </div>
+        </div>
+
+        <!-- 3. Total Abonos Realizados -->
+        <div class="col-6 col-lg-3">
+            <div class="p-3 rounded-3 bg-white h-100" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #16A34A !important;">
+                <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.72rem;">TOTAL ABONOS PAGADOS</small>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <span class="fs-4 fw-extrabold text-success font-mono">${{ (total_abonos_global)|cop }}</span>
+                    <i class="fa-solid fa-hand-holding-dollar fs-4 opacity-50 text-success"></i>
+                </div>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">Dinero girado a proveedores</small>
+            </div>
+        </div>
+
+        <!-- 4. Proveedores Registrados -->
+        <div class="col-6 col-lg-3">
+            <div class="p-3 rounded-3 bg-white h-100" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-accent) !important;">
+                <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.72rem;">PROVEEDORES ACTIVOS</small>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <span class="fs-4 fw-extrabold text-dark font-mono">{{ proveedores|length }}</span>
+                    <i class="fa-solid fa-truck fs-4 opacity-75" style="color: var(--color-accent);"></i>
+                </div>
+                <small class="text-muted font-mono" style="font-size: 0.7rem;">En directorio comercial</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buscador y Tabla de Proveedores -->
+    <div class="card p-0 overflow-hidden bg-white mb-5 shadow-sm" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-radius: 16px;">
+        <div class="p-3 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom" style="background-color: var(--color-bg-main);">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-boxes-packing fs-5" style="color: var(--color-secondary);"></i>
+                <h5 class="fw-extrabold text-dark m-0 font-heading">Directorio de Cuentas Corrientes</h5>
+            </div>
+            <div class="input-group" style="max-width: 320px;">
+                <span class="input-group-text bg-white border"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" id="inputBuscarProveedor" class="form-control form-control-sm bg-white border" placeholder="Buscar proveedor o empresa..." onkeyup="filtrarTablaProveedores()">
+            </div>
+        </div>
+
+        <div class="table-responsive p-0">
+            <table class="table table-hover align-middle m-0" id="tablaProveedores">
+                <thead style="background-color: var(--color-secondary); color: #FFFFFF;">
+                    <tr>
+                        <th class="ps-4 text-white font-heading" style="font-size: 0.8rem;">PROVEEDOR / EMPRESA</th>
+                        <th class="text-white font-heading" style="font-size: 0.8rem;">TELÉFONO</th>
+                        <th class="text-end text-white font-heading" style="font-size: 0.8rem;">TOTAL FACTURADO</th>
+                        <th class="text-end text-white font-heading" style="font-size: 0.8rem;">TOTAL ABONOS</th>
+                        <th class="text-end text-white font-heading" style="font-size: 0.8rem;">SALDO PENDIENTE</th>
+                        <th class="text-end pe-4 text-white font-heading" style="font-size: 0.8rem;">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in proveedores %}
+                    <tr class="fila-proveedor">
+                        <!-- Nombre / Empresa -->
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-dark text-warning fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                    {{ p.nombre[:2]|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-extrabold text-dark fs-6 font-heading nombre-prov">{{ p.nombre }}</div>
+                                    {% if p.empresa %}
+                                    <span class="badge bg-light text-dark border font-mono empresa-prov" style="font-size: 0.72rem;">
+                                        <i class="fa-solid fa-building me-1 text-muted"></i>{{ p.empresa }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Teléfono -->
+                        <td>
+                            {% if p.telefono %}
+                            <span class="font-mono text-muted small"><i class="fa-solid fa-phone me-1 text-success"></i>{{ p.telefono }}</span>
+                            {% else %}
+                            <span class="text-muted small italic">Sin registrar</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Total Facturado -->
+                        <td class="text-end font-mono fw-bold text-dark">
+                            ${{ (p.total_facturado)|cop }}
+                        </td>
+
+                        <!-- Total Abonos -->
+                        <td class="text-end font-mono fw-bold text-success">
+                            ${{ (p.total_abonos)|cop }}
+                        </td>
+
+                        <!-- Saldo Pendiente -->
+                        <td class="text-end">
+                            {% if p.saldo_pendiente > 0 %}
+                            <span class="badge rounded-pill px-3 py-2 font-mono fs-6 fw-extrabold" style="background-color: #FEE2E2; color: var(--color-primary); border: 1.5px solid var(--color-primary);">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i>${{ (p.saldo_pendiente)|cop }}
+                            </span>
+                            {% else %}
+                            <span class="badge rounded-pill px-3 py-2 font-mono fs-6 fw-bold" style="background-color: #DCFCE7; color: #16A34A; border: 1.5px solid #16A34A;">
+                                <i class="fa-solid fa-circle-check me-1"></i>Al Día ($0)
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Acciones -->
+                        <td class="text-end pe-4">
+                            <div class="btn-group shadow-sm rounded-pill">
+                                <a href="{{ url_for('proveedores_bp.cuenta', id=p.id) }}" class="btn btn-sm btn-outline-dark fw-bold px-3 font-heading" title="Ver Cuenta Corriente y Facturas">
+                                    <i class="fa-solid fa-file-invoice me-1 text-primary"></i> Cuenta Corriente
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger px-3 fw-bold btn-eliminar-proveedor" data-id="{{ p.id }}" data-nombre="{{ p.nombre }}" title="Eliminar Proveedor">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-truck-ramp-box fs-1 mb-3 opacity-25"></i>
+                            <h5 class="fw-bold">No hay proveedores registrados aún</h5>
+                            <p class="small mb-3">Registra tus proveedores de bebidas, materias primas o insumos para llevar el control de facturas y pagos.</p>
+                            <button type="button" class="btn btn-hb-primary px-4 py-2 font-heading" data-bs-toggle="modal" data-bs-target="#modalNuevoProveedor">
+                                <i class="fa-solid fa-plus me-1"></i> Registrar Primer Proveedor
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Proveedor -->
+<div class="modal fade" id="modalNuevoProveedor" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 p-3 shadow-lg" style="border: 2px solid var(--color-text-main) !important;">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="p-2 rounded-3" style="background-color: var(--color-bg-main); border: 1.5px solid var(--color-text-main);">
+                        <i class="fa-solid fa-truck-ramp-box fs-5" style="color: var(--color-secondary);"></i>
+                    </div>
+                    <h5 class="modal-title fw-extrabold text-dark font-heading">Registrar Nuevo Proveedor</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form action="{{ url_for('proveedores_bp.crear') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <div class="modal-body py-4">
+                    <div class="mb-3">
+                        <label class="form-label text-dark fw-bold small font-heading">Nombre del Proveedor / Contacto <span class="text-danger">*</span></label>
+                        <input type="text" name="nombre" class="form-control bg-light border py-2 fw-semibold" required placeholder="Ej: Bavaria S.A., Distribuidora El Paisa, Juan Pérez">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-dark fw-bold small font-heading">Empresa / Razón Social (Opcional)</label>
+                        <input type="text" name="empresa" class="form-control bg-light border py-2" placeholder="Ej: Cervecería Artesanal Andina SAS">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-dark fw-bold small font-heading">Teléfono / Celular / WhatsApp</label>
+                        <input type="text" name="telefono" class="form-control bg-light border py-2 font-mono" placeholder="Ej: 310 123 4567">
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-hb-secondary rounded-pill px-5 shadow-sm font-heading">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Proveedor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const csrf_token = "{{ csrf_token() }}";
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".btn-eliminar-proveedor").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const id = this.getAttribute("data-id");
+                const nombre = this.getAttribute("data-nombre");
+                confirmarEliminarProveedor(id, nombre);
+            });
+        });
+    });
+
+    function filtrarTablaProveedores() {
+        const query = document.getElementById('inputBuscarProveedor').value.toLowerCase().trim();
+        const filas = document.querySelectorAll('.fila-proveedor');
+
+        filas.forEach(fila => {
+            const nombre = (fila.querySelector('.nombre-prov')?.textContent || '').toLowerCase();
+            const empresa = (fila.querySelector('.empresa-prov')?.textContent || '').toLowerCase();
+            if (nombre.includes(query) || empresa.includes(query)) {
+                fila.style.display = '';
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+    }
+
+    async function confirmarEliminarProveedor(id, nombre) {
+        const res = await Swal.fire({
+            title: `¿Eliminar al proveedor "${nombre}"?`,
+            text: 'Esta acción borrará al proveedor y todo su historial de facturas, archivos y abonos registrados.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#D92524',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!res.isConfirmed) return;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/proveedores/eliminar/${id}`;
+        const inputCsrf = document.createElement('input');
+        inputCsrf.type = 'hidden';
+        inputCsrf.name = 'csrf_token';
+        inputCsrf.value = csrf_token;
+        form.appendChild(inputCsrf);
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+{% endblock %}

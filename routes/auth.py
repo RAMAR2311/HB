@@ -16,13 +16,22 @@ def login():
         
         # Validar contraseña cifrada
         if user and check_password_hash(user.password_hash, password):
+            if not user.activo:
+                flash('⛔ Tu cuenta se encuentra deshabilitada. Comunícate con el administrador.', 'danger')
+                return redirect(url_for('auth_bp.login'))
+
+            permitido, msg_horario = user.verificar_acceso_horario()
+            if not permitido:
+                flash(f'⛔ {msg_horario}', 'danger')
+                return redirect(url_for('auth_bp.login'))
+
             login_user(user) # Iniciar sesión del lado del servidor persistente
-            flash('¡Sesión iniciada con éxito!', 'success')
+            flash(f'¡Bienvenido(a), {user.nombre}!', 'success')
             
             # Redirección inteligente basada en ROL o hacia la raíz para delegar el control
             return redirect(url_for('index'))
         
-        flash('Tus credenciales (Correo o Contraseña) son inválidas.', 'error')
+        flash('Tus credenciales (Correo o Contraseña) son inválidas.', 'danger')
         return redirect(url_for('auth_bp.login'))
         
     # GET: Mostrar Formulario normal

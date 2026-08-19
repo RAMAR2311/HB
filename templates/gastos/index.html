@@ -50,22 +50,29 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label fw-bold text-brand-black">Tipo de Salida</label>
+                {% if current_user.rol == 'admin' %}
                 <select name="tipo_gasto" class="form-select bg-light border-0" required>
                     <option value="" selected disabled>Seleccionar tipo...</option>
                     <option value="Gastos Operacionales">Gastos Operacionales</option>
                     <option value="Costos Producto">Costos Producto</option>
                     <option value="Costos Indirectos">Costos Indirectos</option>
                 </select>
+                {% else %}
+                <input type="text" class="form-control bg-light border-0 fw-bold" value="Gastos Operacionales" readonly>
+                <input type="hidden" name="tipo_gasto" value="Gastos Operacionales">
+                {% endif %}
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-bold text-brand-black">Categoría</label>
                 <!-- Usamos datalist para permitir escribir o seleccionar opciones -->
-                <input type="text" name="categoria" list="categoriasComunes" class="form-control bg-light border-0" autocomplete="off" placeholder="Ej: Arriendo, Aseo..." required>
+                <input type="text" name="categoria" list="categoriasComunes" class="form-control bg-light border-0" autocomplete="off" placeholder="Ej: Aseo, Transporte, Caja Menor..." required>
                 <datalist id="categoriasComunes">
+                    {% if current_user.rol == 'admin' %}
                     <option value="Arriendo">
                     <option value="Servicios Públicos">
                     <option value="Nómina">
                     <option value="Internet / Teléfono">
+                    {% endif %}
                     <option value="Aseo y Mantenimiento">
                     <option value="Alimentación">
                     <option value="Transporte / Fletes">

@@ -1,93 +1,327 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-5">
-    <div>
-        <h2 class="fw-bold text-brand-black mb-0">Dashboard Operativo</h2>
-        <p class="text-muted">¡Bienvenido al panel central, {{ current_user.nombre }}!</p>
-    </div>
-    <div>
-        <button type="button" class="btn btn-yellow rounded-pill fw-bold shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#modalBalance">
-            <i class="fa-solid fa-scale-balanced me-2"></i>Generar Balance
-        </button>
-    </div>
-</div>
-
-<!-- Modal Generar Balance Financiero -->
-<div class="modal fade" id="modalBalance" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-bottom-0 pb-0">
-        <h5 class="fw-bold text-brand-black"><i class="fa-solid fa-file-invoice-dollar me-2" style="color: var(--brand-yellow);"></i>Balance Financiero</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <form action="{{ url_for('admin_bp.balance_financiero') }}" method="GET">
-          <div class="modal-body">
-              <p class="text-muted small">Selecciona el rango de fechas para cruzar las ventas e ingresos totales contra el Costo Directo y los Gastos Registrados.</p>
-              <div class="mb-3">
-                  <label class="form-label fw-bold text-brand-black small">Fecha de Inicio</label>
-                  <input type="date" name="fecha_inicio" class="form-control" required>
-              </div>
-              <div class="mb-4">
-                  <label class="form-label fw-bold text-brand-black small">Fecha de Fin</label>
-                  <input type="date" name="fecha_fin" class="form-control" required>
-              </div>
-          </div>
-          <div class="modal-footer border-top-0 pt-0">
-            <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-yellow rounded-pill px-4 fw-bold"><i class="fa-solid fa-file-pdf me-1"></i> Calcular y Validar</button>
-          </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Layout de Tarjetas (Fila de 4 Elementos) -->
-<div class="row g-3 mb-4">
-    <!-- 1. Tarjeta: Ingresos Totales (Botones/Textos Azul Turquesa / .btn-yellow) -->
-    <div class="col-md-3">
-        <div class="card card-custom h-100 p-4">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <i class="fa-solid fa-sack-dollar fs-1" style="color: var(--brand-yellow);"></i>
-                <span class="badge bg-light text-brand-yellow border border-brand-yellow rounded-pill">Ciclo (21 al 20)</span>
+<div class="container-fluid px-0 px-md-2 mb-5">
+    <!-- Header Superior del Dashboard -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="p-3 rounded-4 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main);">
+                <i class="fa-solid fa-chart-pie fs-3" style="color: var(--color-secondary);"></i>
             </div>
-            <h5 class="text-brand-black fw-bold">Ingresos del Ciclo</h5>
-            <h2 class="fw-bolder" style="color: var(--brand-yellow);">${{ (total_ventas)|cop }}</h2>
-            <p class="text-muted small mb-0"><i class="fa-solid fa-receipt me-1"></i> {{ conteo_ventas }} ventas realizadas</p>
-            <div class="mt-auto pt-3">
-                <a href="{{ url_for('sales_bp.historial') }}" class="btn btn-yellow w-100 rounded-pill"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Ver Historial</a>
+            <div>
+                <h3 class="fw-extrabold text-dark m-0 font-heading" style="letter-spacing: -0.02em;">Dashboard Operativo Central</h3>
+                <p class="text-muted small m-0 font-body">¡Bienvenido(a) al centro de control, <strong>{{ current_user.nombre }}</strong>! Selecciona un módulo para gestionar tu operación.</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-hb-secondary px-4 py-2 fw-bold shadow-sm font-heading" data-bs-toggle="modal" data-bs-target="#modalBalance">
+                <i class="fa-solid fa-scale-balanced me-2"></i>Generar Balance Financiero
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Generar Balance Financiero -->
+    <div class="modal fade" id="modalBalance" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 6px 6px 0px var(--color-text-main);">
+                <div class="modal-header border-bottom pb-3">
+                    <h5 class="fw-extrabold text-dark m-0 font-heading">
+                        <i class="fa-solid fa-file-invoice-dollar me-2" style="color: var(--color-secondary);"></i> Balance Financiero General
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ url_for('admin_bp.balance_financiero') }}" method="GET">
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-3 font-body">
+                            Selecciona el rango de fechas para cruzar las ventas e ingresos totales contra el Costo Directo y los Gastos Operativos registrados.
+                        </p>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small font-heading">Fecha de Inicio</label>
+                            <input type="date" name="fecha_inicio" class="form-control fw-bold font-mono" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small font-heading">Fecha de Fin</label>
+                            <input type="date" name="fecha_fin" class="form-control fw-bold font-mono" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top pt-3">
+                        <button type="button" class="btn btn-outline-dark px-4 fw-bold font-heading" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-hb-secondary px-4 fw-bold font-heading">
+                            <i class="fa-solid fa-file-pdf me-1"></i> Calcular y Validar
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- 2. Tarjeta: Productos en Catálogo (Rosa Pastel / .btn-orange) -->
-    <div class="col-md-3">
-        <div class="card card-custom h-100 p-4">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <i class="fa-solid fa-cubes fs-1" style="color: var(--brand-orange);"></i>
+    <!-- 1. FILA DE MÉTRICAS KPI CLAVE -->
+    <div class="row g-3 mb-5">
+        <!-- 1. Ingresos del Mes -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #16A34A !important; border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">INGRESOS DEL TURNO ABIERTO (#{{ turno_numero }})</small>
+                    <span class="badge bg-success bg-opacity-15 text-success border border-success rounded-pill font-mono" style="font-size: 0.68rem;">Turno Actual</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center my-2">
+                    <span class="fs-4 fw-extrabold text-success font-mono">${{ (total_ventas)|cop }}</span>
+                    <i class="fa-solid fa-sack-dollar fs-3 text-success opacity-50"></i>
+                </div>
+                <small class="text-muted font-body" style="font-size: 0.72rem;"><i class="fa-solid fa-receipt me-1"></i> {{ conteo_ventas }} ventas acumuladas</small>
             </div>
-            <h5 class="text-brand-black fw-bold">Productos en Catálogo</h5>
-            <h2 class="fw-bolder text-brand-black">{{ total_productos }} uds.</h2>
-            <div class="mt-auto pt-4">
-                <a href="/inventory/" class="btn btn-orange w-100 rounded-pill text-brand-black"><i class="fa-solid fa-sliders me-2"></i> Gestionar Inventario</a>
+        </div>
+
+        <!-- 2. Ventas Realizadas -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid #2563EB !important; border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">ACTIVIDAD DE FACTURACIÓN</small>
+                    <i class="fa-solid fa-chart-line text-primary"></i>
+                </div>
+                <div class="d-flex justify-content-between align-items-center my-2">
+                    <span class="fs-4 fw-extrabold text-primary font-mono">{{ conteo_ventas }} tickets</span>
+                    <i class="fa-solid fa-cash-register fs-3 text-primary opacity-50"></i>
+                </div>
+                <small class="text-muted font-body" style="font-size: 0.72rem;"><a href="{{ url_for('sales_bp.historial') }}" class="text-decoration-none fw-bold text-primary">Ver historial completo &rarr;</a></small>
             </div>
+        </div>
+
+        <!-- 3. Productos en Catálogo -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-accent) !important; border-radius: 14px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">CATÁLOGO DE PRODUCTOS</small>
+                    <i class="fa-solid fa-boxes-stacked opacity-75" style="color: var(--color-accent);"></i>
+                </div>
+                <div class="d-flex justify-content-between align-items-center my-2">
+                    <span class="fs-4 fw-extrabold font-mono" style="color: var(--color-accent);">{{ total_productos }} uds.</span>
+                    <i class="fa-solid fa-cubes fs-3 opacity-50" style="color: var(--color-accent);"></i>
+                </div>
+                <small class="text-muted font-body" style="font-size: 0.72rem;">Cervezas, cócteles, platos e insumos</small>
+            </div>
+        </div>
+
+        <!-- 4. Alertas de Stock -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <a href="{{ url_for('inventory_bp.index', alerta='1') }}" class="text-decoration-none d-block h-100">
+                <div class="card p-3 h-100 bg-white" style="border: 2px solid {% if productos_bajo_stock > 0 %}var(--color-primary){% else %}var(--color-text-main){% endif %}; box-shadow: 3px 3px 0px {% if productos_bajo_stock > 0 %}var(--color-primary){% else %}var(--color-text-main){% endif %}; border-left: 6px solid var(--color-primary) !important; border-radius: 14px; cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">ALERTAS DE STOCK MÍNIMO</small>
+                        <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center my-2">
+                        <span class="fs-4 fw-extrabold text-danger font-mono">{{ productos_bajo_stock }} productos</span>
+                        <i class="fa-solid fa-bell fs-3 text-danger opacity-50"></i>
+                    </div>
+                    <small class="text-danger fw-semibold font-body" style="font-size: 0.72rem;">Existencias bajas o críticas (&le; 10 uds / 25 oz)</small>
+                </div>
+            </a>
         </div>
     </div>
 
-    <!-- 3. Tarjeta: Alertas de Stock (Danger Colors / Bootstrap Nativo) -->
-    <div class="col-md-3">
-        <div class="card card-custom h-100 p-4 border border-danger border-2">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <i class="fa-solid fa-triangle-exclamation fs-1 text-danger"></i>
-            </div>
-            <h5 class="text-brand-black fw-bold">Alertas de Materias Primas</h5>
-            <h2 class="fw-bolder text-danger">{{ productos_bajo_stock }} insumos</h2>
-            <p class="text-muted small">Tienen existencias limitadas (10 o menos unidades).</p>
-            <div class="mt-auto pt-3">
-                <a href="/inventory/" class="btn btn-outline-danger w-100 rounded-pill fw-bold"><i class="fa-solid fa-eye me-2"></i> Revisar Urgencias</a>
-            </div>
-        </div>
+    <!-- 2. SECCIÓN PRINCIPAL: TARJETAS DE ACCESO A TODOS LOS MÓDULOS -->
+    <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-2">
+        <h4 class="fw-extrabold text-dark m-0 font-heading">
+            <i class="fa-solid fa-layer-group me-2" style="color: var(--color-secondary);"></i> Módulos Operativos de la Plataforma
+        </h4>
+        <span class="badge bg-dark text-warning font-mono">HARRY BEER STATION</span>
     </div>
 
+    <div class="row g-4">
+        <!-- 1. Inventario & Stock -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="/inventory" class="text-decoration-none text-dark h-100 d-block">
+                <div class="card h-100 p-4 bg-white rounded-4 module-card transition-all position-relative" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main);">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="p-3 rounded-3" style="background-color: #FEF3C7; color: #D97706;">
+                            <i class="fa-solid fa-boxes-stacked fs-2"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border font-mono">Insumos & Recetas</span>
+                    </div>
+                    <h5 class="fw-extrabold text-dark mb-1 font-heading">Inventario & Stock</h5>
+                    <p class="text-muted small font-body mb-3 flex-grow-1">
+                        Control de cervezas, recetas, insumos, ajuste de existencias y alertas de abastecimiento.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <span class="small fw-bold font-heading" style="color: #D97706;">Ingresar al Inventario</span>
+                        <i class="fa-solid fa-arrow-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 2. Terminal POS / Mesas -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="/tables/mapa" class="text-decoration-none text-dark h-100 d-block">
+                <div class="card h-100 p-4 bg-white rounded-4 module-card transition-all position-relative" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main);">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="p-3 rounded-3" style="background-color: #FEE2E2; color: var(--color-primary);">
+                            <i class="fa-solid fa-cash-register fs-2"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border font-mono">Punto de Venta</span>
+                    </div>
+                    <h5 class="fw-extrabold text-dark mb-1 font-heading">Terminal POS / Mesas</h5>
+                    <p class="text-muted small font-body mb-3 flex-grow-1">
+                        Mapa de mesas en tiempo real, comanda de pedidos, barra directa, cobro parcial y tickets.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <span class="small fw-bold font-heading" style="color: var(--color-primary);">Abrir Terminal POS</span>
+                        <i class="fa-solid fa-arrow-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 3. Personal & Horarios -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="/admin/vendedores" class="text-decoration-none text-dark h-100 d-block">
+                <div class="card h-100 p-4 bg-white rounded-4 module-card transition-all position-relative" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main);">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="p-3 rounded-3" style="background-color: #EDE9FE; color: #7C3AED;">
+                            <i class="fa-solid fa-users-gear fs-2"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border font-mono">Equipo & Accesos</span>
+                    </div>
+                    <h5 class="fw-extrabold text-dark mb-1 font-heading">Personal & Horarios</h5>
+                    <p class="text-muted small font-body mb-3 flex-grow-1">
+                        Gestión de meseros y cajeros, estado activo y restricción de horarios por turno laboral.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <span class="small fw-bold font-heading" style="color: #7C3AED;">Administrar Personal</span>
+                        <i class="fa-solid fa-arrow-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 4. Proveedores & Cuentas -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="/proveedores" class="text-decoration-none text-dark h-100 d-block">
+                <div class="card h-100 p-4 bg-white rounded-4 module-card transition-all position-relative" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main);">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="p-3 rounded-3" style="background-color: #E0E7FF; color: #4F46E5;">
+                            <i class="fa-solid fa-truck-ramp-box fs-2"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border font-mono">Cuentas por Pagar</span>
+                    </div>
+                    <h5 class="fw-extrabold text-dark mb-1 font-heading">Proveedores & Cuentas</h5>
+                    <p class="text-muted small font-body mb-3 flex-grow-1">
+                        Control consolidado de facturas, abonos realizados, comprobantes y saldos de deuda pendientes.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <span class="small fw-bold font-heading" style="color: #4F46E5;">Ver Estado de Cuentas</span>
+                        <i class="fa-solid fa-arrow-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 5. Liquidaciones & Cortesías -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="/liquidaciones" class="text-decoration-none text-dark h-100 d-block">
+                <div class="card h-100 p-4 bg-white rounded-4 module-card transition-all position-relative" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main);">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="p-3 rounded-3" style="background-color: #DCFCE7; color: #16A34A;">
+                            <i class="fa-solid fa-hand-holding-dollar fs-2"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border font-mono">Propinas & Botellaje</span>
+                    </div>
+                    <h5 class="fw-extrabold text-dark mb-1 font-heading">Liquidaciones & Cortesías</h5>
+                    <p class="text-muted small font-body mb-3 flex-grow-1">
+                        Cálculo y distribución de propinas recaudadas, comisión de botellaje y consumo de cortesía.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <span class="small fw-bold font-heading" style="color: #16A34A;">Liquidar Turnos</span>
+                        <i class="fa-solid fa-arrow-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 6. Gastos Operativos -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="/gastos" class="text-decoration-none text-dark h-100 d-block">
+                <div class="card h-100 p-4 bg-white rounded-4 module-card transition-all position-relative" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main);">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="p-3 rounded-3" style="background-color: #FFE4E6; color: #E11D48;">
+                            <i class="fa-solid fa-money-bill-transfer fs-2"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border font-mono">Egresos & Caja</span>
+                    </div>
+                    <h5 class="fw-extrabold text-dark mb-1 font-heading">Control de Gastos</h5>
+                    <p class="text-muted small font-body mb-3 flex-grow-1">
+                        Registro ágil de egresos diarios en efectivo, gastos menores, insumos externos y costos fijos.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <span class="small fw-bold font-heading" style="color: #E11D48;">Registrar Gastos</span>
+                        <i class="fa-solid fa-arrow-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 7. Arqueo de Caja -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="/arqueo/nuevo" class="text-decoration-none text-dark h-100 d-block">
+                <div class="card h-100 p-4 bg-white rounded-4 module-card transition-all position-relative" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main);">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="p-3 rounded-3" style="background-color: #F1F5F9; color: var(--color-text-main);">
+                            <i class="fa-solid fa-calculator fs-2"></i>
+                        </div>
+                        <span class="badge bg-dark text-warning font-mono">Cierre Diario</span>
+                    </div>
+                    <h5 class="fw-extrabold text-dark mb-1 font-heading">Arqueo de Caja</h5>
+                    <p class="text-muted small font-body mb-3 flex-grow-1">
+                        Tirilla digital en vivo, cuadre de caja diario con validación física y cálculo de sobrantes/faltantes.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <span class="small fw-bold font-heading text-dark">Realizar Cuadre</span>
+                        <i class="fa-solid fa-arrow-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 8. Historial & Auditoría de Ventas -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <a href="{{ url_for('sales_bp.historial') }}" class="text-decoration-none text-dark h-100 d-block">
+                <div class="card h-100 p-4 bg-white rounded-4 module-card transition-all position-relative" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main);">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="p-3 rounded-3" style="background-color: #CFFAFE; color: #0891B2;">
+                            <i class="fa-solid fa-file-invoice-dollar fs-2"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border font-mono">Reportes & Tickets</span>
+                    </div>
+                    <h5 class="fw-extrabold text-dark mb-1 font-heading">Historial de Ventas</h5>
+                    <p class="text-muted small font-body mb-3 flex-grow-1">
+                        Auditoría de tickets emitidos, búsqueda por fecha o cliente, reimpresión y comprobantes fiscales.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <span class="small fw-bold font-heading" style="color: #0891B2;">Consultar Ventas</span>
+                        <i class="fa-solid fa-arrow-right text-muted"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
 </div>
+
+<style>
+    .module-card {
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .module-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 6px 6px 0px var(--color-text-main) !important;
+        background-color: #FFFFFF !important;
+    }
+
+    .module-card:active {
+        transform: translateY(0);
+        box-shadow: 2px 2px 0px var(--color-text-main) !important;
+    }
+</style>
 {% endblock %}

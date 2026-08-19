@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-0 px-md-3 mb-5">
+    <!-- Navegación y Encabezado del Proveedor -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('proveedores_bp.index') }}" class="btn btn-outline-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border: 2px solid var(--color-text-main);" title="Volver a la lista de proveedores">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h3 class="fw-extrabold text-dark m-0 font-heading">{{ provider.nombre }}</h3>
+                    {% if provider.empresa %}
+                    <span class="badge bg-white text-dark border font-mono fs-6" style="border: 1.5px solid var(--color-text-main) !important;">
+                        <i class="fa-solid fa-building me-1 text-muted"></i>{{ provider.empresa }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-3 text-muted small mt-1 font-body">
+                    {% if provider.telefono %}
+                    <span><i class="fa-solid fa-phone me-1 text-success"></i><span class="font-mono">{{ provider.telefono }}</span></span>
+                    {% endif %}
+                    <span><i class="fa-regular fa-calendar me-1"></i>Registrado: <span class="font-mono">{{ provider.fecha_creacion.strftime('%d/%m/%Y') }}</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-hb-secondary px-4 py-2 shadow-sm font-heading" data-bs-toggle="modal" data-bs-target="#modalNuevaFactura">
+                <i class="fa-solid fa-file-circle-plus me-1"></i> + Registrar Factura
+            </button>
+            <button type="button" class="btn btn-hb-accent px-4 py-2 shadow-sm font-heading" data-bs-toggle="modal" data-bs-target="#modalNuevoAbono">
+                <i class="fa-solid fa-hand-holding-dollar me-1"></i> + Registrar Abono
+            </button>
+        </div>
+    </div>
+
+    <!-- 3 KPI Cards de Impacto -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Total Facturado -->
+        <div class="col-md-4">
+            <div class="p-3 rounded-3 bg-white h-100" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-left: 6px solid var(--color-secondary) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.75rem;">TOTAL FACTURADO</small>
+                        <h2 class="fw-extrabold text-dark m-0 font-mono">${{ (provider.total_facturado)|cop }}</h2>
+                        <small class="text-muted font-mono" style="font-size: 0.72rem;">{{ provider.invoices|length }} facturas emitidas</small>
+                    </div>
+                    <div class="p-3 rounded-circle" style="background-color: #FFE4D6; color: var(--color-secondary);">
+                        <i class="fa-solid fa-file-invoice-dollar fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Total Abonado -->
+        <div class="col-md-4">
+            <div class="p-3 rounded-3 bg-white h-100" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-left: 6px solid #16A34A !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.75rem;">TOTAL ABONADO / PAGADO</small>
+                        <h2 class="fw-extrabold text-success m-0 font-mono">${{ (provider.total_abonos)|cop }}</h2>
+                        <small class="text-muted font-mono" style="font-size: 0.72rem;">{{ provider.payments|length }} abonos realizados</small>
+                    </div>
+                    <div class="p-3 rounded-circle" style="background-color: #DCFCE7; color: #16A34A;">
+                        <i class="fa-solid fa-hand-holding-dollar fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Saldo Pendiente (Deuda) -->
+        <div class="col-md-4">
+            {% if provider.saldo_pendiente > 0 %}
+            <div class="p-3 rounded-3 bg-white h-100" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-left: 6px solid var(--color-primary) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.75rem;">SALDO PENDIENTE (DEUDA NETA)</small>
+                        <h2 class="fw-extrabold m-0 font-mono text-danger">
+                            ${{ (provider.saldo_pendiente)|cop }}
+                        </h2>
+                        <small class="font-mono fw-bold text-danger" style="font-size: 0.72rem;">
+                            ⚠️ Saldo por pagar al proveedor
+                        </small>
+                    </div>
+                    <div class="p-3 rounded-circle" style="background-color: #FEE2E2; color: var(--color-primary);">
+                        <i class="fa-solid fa-scale-unbalanced fs-3"></i>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="p-3 rounded-3 bg-white h-100" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-left: 6px solid #16A34A !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted fw-bold d-block font-heading" style="font-size: 0.75rem;">SALDO PENDIENTE (DEUDA NETA)</small>
+                        <h2 class="fw-extrabold m-0 font-mono text-success">
+                            ${{ (provider.saldo_pendiente)|cop }}
+                        </h2>
+                        <small class="font-mono fw-bold text-success" style="font-size: 0.72rem;">
+                            ✅ Cuenta saldada / Al día
+                        </small>
+                    </div>
+                    <div class="p-3 rounded-circle" style="background-color: #DCFCE7; color: #16A34A;">
+                        <i class="fa-solid fa-check-double fs-3"></i>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Layout de Dos Columnas: Facturas vs Pagos -->
+    <div class="row g-4">
+        <!-- Columna Izquierda: Historial de Facturas -->
+        <div class="col-lg-6">
+            <div class="card p-0 overflow-hidden bg-white shadow-sm h-100" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-radius: 16px;">
+                <div class="p-3 d-flex justify-content-between align-items-center border-bottom" style="background-color: var(--color-bg-main);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-receipt fs-5" style="color: var(--color-secondary);"></i>
+                        <h5 class="fw-extrabold text-dark m-0 font-heading">Historial de Facturas (Cargos)</h5>
+                    </div>
+                    <span class="badge bg-white text-dark border font-mono fw-bold">{{ provider.invoices|length }} Facturas</span>
+                </div>
+
+                <div class="table-responsive p-0" style="max-height: 480px; overflow-y: auto;">
+                    <table class="table table-hover align-middle m-0">
+                        <thead style="background-color: var(--color-secondary); color: #FFFFFF; position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th class="ps-3 text-white font-heading" style="font-size: 0.78rem;">FECHA / FOLIO</th>
+                                <th class="text-white font-heading" style="font-size: 0.78rem;">DESCRIPCIÓN</th>
+                                <th class="text-end text-white font-heading" style="font-size: 0.78rem;">MONTO</th>
+                                <th class="text-center text-white font-heading" style="font-size: 0.78rem;">SOPORTE</th>
+                                <th class="text-end pe-3 text-white font-heading" style="font-size: 0.78rem;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inv in provider.invoices %}
+                            <tr>
+                                <td class="ps-3 py-3">
+                                    <div class="fw-bold text-dark font-mono small">{{ inv.fecha_factura.strftime('%d/%m/%Y') }}</div>
+                                    {% if inv.numero_factura %}
+                                    <span class="badge bg-light text-dark border font-mono" style="font-size: 0.7rem;">#{{ inv.numero_factura }}</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted border font-mono" style="font-size: 0.7rem;">Doc #{{ inv.id }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="small fw-semibold text-dark">{{ inv.descripcion or 'Sin descripción' }}</span>
+                                </td>
+                                <td class="text-end font-mono fw-extrabold text-dark">
+                                    ${{ (inv.monto_total)|cop }}
+                                </td>
+                                <td class="text-center">
+                                    {% if inv.comprobante %}
+                                    <a href="{{ url_for('static', filename='uploads/providers/' + inv.comprobante) }}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-2 py-1" style="font-size: 0.72rem; border: 1.5px solid var(--color-text-main);" title="Ver Comprobante Adjunto">
+                                        <i class="fa-solid fa-paperclip text-primary me-1"></i> Ver
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="d-inline-flex gap-1 align-items-center">
+                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-circle p-1 btn-editar-factura" 
+                                                data-prov-id="{{ provider.id }}" 
+                                                data-inv-id="{{ inv.id }}" 
+                                                data-folio="{{ inv.numero_factura or '' }}" 
+                                                data-monto="{{ inv.monto_total|int }}" 
+                                                data-fecha="{{ inv.fecha_factura.strftime('%Y-%m-%d') }}" 
+                                                data-descripcion="{{ inv.descripcion or '' }}" 
+                                                title="Editar Factura" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="fa-solid fa-pen" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-1 btn-eliminar-factura" 
+                                                data-prov-id="{{ provider.id }}" 
+                                                data-inv-id="{{ inv.id }}" 
+                                                data-folio="{{ inv.numero_factura or inv.id }}" 
+                                                title="Eliminar Factura" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="fa-solid fa-file-invoice fs-2 mb-2 opacity-25"></i>
+                                    <p class="small m-0">No se han registrado facturas para este proveedor.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Historial de Abonos / Pagos -->
+        <div class="col-lg-6">
+            <div class="card p-0 overflow-hidden bg-white shadow-sm h-100" style="border: 2px solid var(--color-text-main); box-shadow: 4px 4px 0px var(--color-text-main); border-radius: 16px;">
+                <div class="p-3 d-flex justify-content-between align-items-center border-bottom" style="background-color: var(--color-bg-main);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-money-bill-transfer fs-5" style="color: #16A34A;"></i>
+                        <h5 class="fw-extrabold text-dark m-0 font-heading">Historial de Abonos (Pagos)</h5>
+                    </div>
+                    <span class="badge bg-white text-dark border font-mono fw-bold">{{ provider.payments|length }} Abonos</span>
+                </div>
+
+                <div class="table-responsive p-0" style="max-height: 480px; overflow-y: auto;">
+                    <table class="table table-hover align-middle m-0">
+                        <thead style="background-color: #16A34A; color: #FFFFFF; position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th class="ps-3 text-white font-heading" style="font-size: 0.78rem;">FECHA PAGO</th>
+                                <th class="text-white font-heading" style="font-size: 0.78rem;">OBSERVACIÓN / DETALLE</th>
+                                <th class="text-end text-white font-heading" style="font-size: 0.78rem;">MONTO ABONADO</th>
+                                <th class="text-end pe-3 text-white font-heading" style="font-size: 0.78rem;">ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pay in provider.payments %}
+                            <tr>
+                                <td class="ps-3 py-3 font-mono fw-bold small text-dark">
+                                    {{ pay.fecha_pago.strftime('%d/%m/%Y') }}
+                                </td>
+                                <td>
+                                    <span class="small fw-semibold text-dark">{{ pay.observacion or 'Abono a cuenta' }}</span>
+                                </td>
+                                <td class="text-end font-mono fw-extrabold text-success">
+                                    ${{ (pay.monto_abonado)|cop }}
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="d-inline-flex gap-1 align-items-center">
+                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-circle p-1 btn-editar-abono" 
+                                                data-prov-id="{{ provider.id }}" 
+                                                data-pay-id="{{ pay.id }}" 
+                                                data-monto="{{ pay.monto_abonado|int }}" 
+                                                data-fecha="{{ pay.fecha_pago.strftime('%Y-%m-%d') }}" 
+                                                data-obs="{{ pay.observacion or '' }}" 
+                                                title="Editar Abono" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="fa-solid fa-pen" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-1 btn-eliminar-abono" 
+                                                data-prov-id="{{ provider.id }}" 
+                                                data-pay-id="{{ pay.id }}" 
+                                                title="Eliminar Abono" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="fa-solid fa-hand-holding-dollar fs-2 mb-2 opacity-25"></i>
+                                    <p class="small m-0">No se han registrado abonos o pagos a este proveedor.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL REGISTRAR FACTURA ==================== -->
+<div class="modal fade" id="modalNuevaFactura" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: 2px solid var(--color-text-main); border-radius: 16px; box-shadow: 6px 6px 0px var(--color-text-main);">
+            <div class="modal-header border-bottom pb-3" style="background-color: var(--color-bg-main);">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-file-circle-plus fs-4" style="color: var(--color-secondary);"></i>
+                    <h5 class="modal-title fw-extrabold font-heading text-dark">Registrar Factura / Cuenta por Pagar</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('proveedores_bp.registrar_factura', id=provider.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark font-heading">MONTO TOTAL FACTURA <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold bg-white" style="border: 1.5px solid var(--color-text-main);">$</span>
+                            <input type="number" step="any" min="1" name="monto_total" class="form-control font-mono fw-bold fs-5" placeholder="0" required style="border: 1.5px solid var(--color-text-main);">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-dark font-heading">N° DE FACTURA / FOLIO</label>
+                            <input type="text" name="numero_factura" class="form-control font-mono" placeholder="Ej: FAC-9821" style="border: 1.5px solid var(--color-text-main);">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-dark font-heading">FECHA DE FACTURA <span class="text-danger">*</span></label>
+                            <input type="date" name="fecha_factura" class="form-control font-mono" value="{{ now_date }}" required style="border: 1.5px solid var(--color-text-main);">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark font-heading">DESCRIPCIÓN / CONCEPTO</label>
+                        <textarea name="descripcion" rows="2" class="form-control font-body" placeholder="Ej: 10 Cajas de cerveza artesanal + botellas" style="border: 1.5px solid var(--color-text-main);"></textarea>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold small text-dark font-heading">ADJUNTAR COMPROBANTE (FOTO O PDF)</label>
+                        <input type="file" name="comprobante" accept=".png,.jpg,.jpeg,.pdf,.webp" class="form-control" style="border: 1.5px solid var(--color-text-main);">
+                        <small class="text-muted" style="font-size: 0.72rem;">Formatos admitidos: JPG, PNG, WEBP, PDF (Máx 10MB)</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3" style="background-color: var(--color-bg-main);">
+                    <button type="button" class="btn btn-outline-dark rounded-pill px-4 fw-bold font-heading" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-hb-secondary rounded-pill px-4 fw-bold font-heading">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Factura
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL EDITAR FACTURA ==================== -->
+<div class="modal fade" id="modalEditarFactura" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: 2px solid var(--color-text-main); border-radius: 16px; box-shadow: 6px 6px 0px var(--color-text-main);">
+            <div class="modal-header border-bottom pb-3" style="background-color: var(--color-bg-main);">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square fs-4" style="color: var(--color-secondary);"></i>
+                    <h5 class="modal-title fw-extrabold font-heading text-dark">Editar Factura de Proveedor</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarFactura" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark font-heading">MONTO TOTAL FACTURA <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold bg-white" style="border: 1.5px solid var(--color-text-main);">$</span>
+                            <input type="number" step="any" min="1" id="edit_inv_monto" name="monto_total" class="form-control font-mono fw-bold fs-5" required style="border: 1.5px solid var(--color-text-main);">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-dark font-heading">N° DE FACTURA / FOLIO</label>
+                            <input type="text" id="edit_inv_folio" name="numero_factura" class="form-control font-mono" style="border: 1.5px solid var(--color-text-main);">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-dark font-heading">FECHA DE FACTURA <span class="text-danger">*</span></label>
+                            <input type="date" id="edit_inv_fecha" name="fecha_factura" class="form-control font-mono" required style="border: 1.5px solid var(--color-text-main);">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark font-heading">DESCRIPCIÓN / CONCEPTO</label>
+                        <textarea id="edit_inv_descripcion" name="descripcion" rows="2" class="form-control font-body" style="border: 1.5px solid var(--color-text-main);"></textarea>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold small text-dark font-heading">REEMPLAZAR COMPROBANTE (OPCIONAL)</label>
+                        <input type="file" name="comprobante" accept=".png,.jpg,.jpeg,.pdf,.webp" class="form-control" style="border: 1.5px solid var(--color-text-main);">
+                        <small class="text-muted" style="font-size: 0.72rem;">Deja este campo vacío si deseas mantener el comprobante anterior.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3" style="background-color: var(--color-bg-main);">
+                    <button type="button" class="btn btn-outline-dark rounded-pill px-4 fw-bold font-heading" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-hb-secondary rounded-pill px-4 fw-bold font-heading">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL REGISTRAR ABONO ==================== -->
+<div class="modal fade" id="modalNuevoAbono" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: 2px solid var(--color-text-main); border-radius: 16px; box-shadow: 6px 6px 0px var(--color-text-main);">
+            <div class="modal-header border-bottom pb-3" style="background-color: var(--color-bg-main);">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-hand-holding-dollar fs-4" style="color: #16A34A;"></i>
+                    <h5 class="modal-title fw-extrabold font-heading text-dark">Registrar Abono / Pago a Proveedor</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('proveedores_bp.registrar_abono', id=provider.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark font-heading">MONTO DEL ABONO <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold bg-white text-success" style="border: 1.5px solid var(--color-text-main);">$</span>
+                            <input type="number" step="any" min="1" name="monto_abonado" class="form-control font-mono fw-bold fs-5 text-success" placeholder="0" required style="border: 1.5px solid var(--color-text-main);">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark font-heading">FECHA DE PAGO <span class="text-danger">*</span></label>
+                        <input type="date" name="fecha_pago" class="form-control font-mono" value="{{ now_date }}" required style="border: 1.5px solid var(--color-text-main);">
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold small text-dark font-heading">OBSERVACIÓN / DETALLE DEL PAGO</label>
+                        <textarea name="observacion" rows="2" class="form-control font-body" placeholder="Ej: Transferencia Bancolombia / Pago en efectivo contraentrega" style="border: 1.5px solid var(--color-text-main);"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3" style="background-color: var(--color-bg-main);">
+                    <button type="button" class="btn btn-outline-dark rounded-pill px-4 fw-bold font-heading" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold font-heading">
+                        <i class="fa-solid fa-check me-1"></i> Confirmar Abono
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL EDITAR ABONO ==================== -->
+<div class="modal fade" id="modalEditarAbono" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: 2px solid var(--color-text-main); border-radius: 16px; box-shadow: 6px 6px 0px var(--color-text-main);">
+            <div class="modal-header border-bottom pb-3" style="background-color: var(--color-bg-main);">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square fs-4" style="color: #16A34A;"></i>
+                    <h5 class="modal-title fw-extrabold font-heading text-dark">Editar Abono de Proveedor</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarAbono" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark font-heading">MONTO DEL ABONO <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold bg-white text-success" style="border: 1.5px solid var(--color-text-main);">$</span>
+                            <input type="number" step="any" min="1" id="edit_pay_monto" name="monto_abonado" class="form-control font-mono fw-bold fs-5 text-success" required style="border: 1.5px solid var(--color-text-main);">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark font-heading">FECHA DE PAGO <span class="text-danger">*</span></label>
+                        <input type="date" id="edit_pay_fecha" name="fecha_pago" class="form-control font-mono" required style="border: 1.5px solid var(--color-text-main);">
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold small text-dark font-heading">OBSERVACIÓN / DETALLE DEL PAGO</label>
+                        <textarea id="edit_pay_observacion" name="observacion" rows="2" class="form-control font-body" style="border: 1.5px solid var(--color-text-main);"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3" style="background-color: var(--color-bg-main);">
+                    <button type="button" class="btn btn-outline-dark rounded-pill px-4 fw-bold font-heading" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold font-heading">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const csrf_token = "{{ csrf_token() }}";
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Eliminar Factura
+        document.querySelectorAll(".btn-eliminar-factura").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const provId = this.getAttribute("data-prov-id");
+                const invId = this.getAttribute("data-inv-id");
+                const folio = this.getAttribute("data-folio");
+                confirmarEliminarFactura(provId, invId, folio);
+            });
+        });
+
+        // Editar Factura
+        document.querySelectorAll(".btn-editar-factura").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const provId = this.getAttribute("data-prov-id");
+                const invId = this.getAttribute("data-inv-id");
+                const folio = this.getAttribute("data-folio");
+                const monto = this.getAttribute("data-monto");
+                const fecha = this.getAttribute("data-fecha");
+                const desc = this.getAttribute("data-descripcion");
+
+                document.getElementById("formEditarFactura").action = `/proveedores/${provId}/invoice/${invId}/editar`;
+                document.getElementById("edit_inv_monto").value = monto;
+                document.getElementById("edit_inv_folio").value = folio;
+                document.getElementById("edit_inv_fecha").value = fecha;
+                document.getElementById("edit_inv_descripcion").value = desc;
+
+                const modal = new bootstrap.Modal(document.getElementById("modalEditarFactura"));
+                modal.show();
+            });
+        });
+
+        // Eliminar Abono
+        document.querySelectorAll(".btn-eliminar-abono").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const provId = this.getAttribute("data-prov-id");
+                const payId = this.getAttribute("data-pay-id");
+                confirmarEliminarAbono(provId, payId);
+            });
+        });
+
+        // Editar Abono
+        document.querySelectorAll(".btn-editar-abono").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const provId = this.getAttribute("data-prov-id");
+                const payId = this.getAttribute("data-pay-id");
+                const monto = this.getAttribute("data-monto");
+                const fecha = this.getAttribute("data-fecha");
+                const obs = this.getAttribute("data-obs");
+
+                document.getElementById("formEditarAbono").action = `/proveedores/${provId}/payment/${payId}/editar`;
+                document.getElementById("edit_pay_monto").value = monto;
+                document.getElementById("edit_pay_fecha").value = fecha;
+                document.getElementById("edit_pay_observacion").value = obs;
+
+                const modal = new bootstrap.Modal(document.getElementById("modalEditarAbono"));
+                modal.show();
+            });
+        });
+    });
+
+    async function confirmarEliminarFactura(provId, invId, numFactura) {
+        const res = await Swal.fire({
+            title: `¿Eliminar factura #${numFactura}?`,
+            text: 'Esta acción restará el monto de la factura del total facturado y borrará el comprobante adjunto.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#D92524',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!res.isConfirmed) return;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/proveedores/${provId}/invoice/${invId}/eliminar`;
+        const inputCsrf = document.createElement('input');
+        inputCsrf.type = 'hidden';
+        inputCsrf.name = 'csrf_token';
+        inputCsrf.value = csrf_token;
+        form.appendChild(inputCsrf);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    async function confirmarEliminarAbono(provId, payId) {
+        const res = await Swal.fire({
+            title: '¿Eliminar este registro de abono?',
+            text: 'El saldo pendiente del proveedor aumentará nuevamente por el valor del abono eliminado.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#D92524',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!res.isConfirmed) return;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/proveedores/${provId}/payment/${payId}/eliminar`;
+        const inputCsrf = document.createElement('input');
+        inputCsrf.type = 'hidden';
+        inputCsrf.name = 'csrf_token';
+        inputCsrf.value = csrf_token;
+        form.appendChild(inputCsrf);
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+{% endblock %}

@@ -42,6 +42,13 @@
                     <span class="text-muted">Precio Sugerido</span>
                     <span class="fw-bold fs-5 text-brand-black">${{ (producto.precio_sugerido)|cop }}</span>
                 </div>
+
+                {% if producto.tiene_botellaje %}
+                <div class="d-flex justify-content-between px-4 py-3 bg-success-subtle rounded mb-3 border border-success">
+                    <span class="text-success fw-bold"><i class="fa-solid fa-hand-holding-dollar me-1"></i>Botellaje Mesero</span>
+                    <span class="fw-bold fs-5 text-success">${{ (producto.comision_mesero)|cop }}</span>
+                </div>
+                {% endif %}
                 
                 {% if producto.variantes %}
                 <div class="text-start mt-4 pt-4 border-top">

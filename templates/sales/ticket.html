@@ -3,221 +3,419 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket de Compra #{{ venta.id }} - EL GOLDY</title>
-    <!-- Incluir solo la fuente base "Roboto Mono" (Letra de ticketera 80mm) -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Ticket #{{ "%05d"|format(venta.id) }} - HARRY BEER STATION</title>
+    <!-- Google Fonts: Roboto Mono Monospace Puro para Impresoras Térmicas 80mm/58mm -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Roboto+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
         body {
-            background-color: #555555; /* Fondo oscuro simulando el escritorio detrás del papel */
+            background-color: #262626;
             margin: 0;
-            padding: 30px;
+            padding: 30px 15px;
             display: flex;
             justify-content: center;
-            font-family: 'Roboto Mono', monospace, sans-serif;
+            align-items: flex-start;
+            min-height: 100vh;
+            font-family: 'Roboto Mono', monospace;
+            color: #000000;
         }
         
         .ticket {
             background-color: #FFFFFF;
             width: 100%;
-            max-width: 380px; /* Ancho de impresora térmica 80mm */
-            padding: 25px 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            color: #1A1A1A; /* Negro de nuestra paleta */
-            box-sizing: border-box;
+            max-width: 380px; /* 80mm standard thermal receipt */
+            padding: 24px 20px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.38;
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .fw-bold { font-weight: 700; }
+        .fw-black { font-weight: 800; }
+
+        .divider-dashed {
+            border-top: 1.5px dashed #000000;
+            margin: 12px 0;
+        }
+
+        .divider-double {
+            border-top: 3px double #000000;
+            margin: 12px 0;
+        }
+
+        .divider-solid {
+            border-top: 2px solid #000000;
+            margin: 12px 0;
         }
 
         .header {
             text-align: center;
-            border-bottom: 2px dashed #1A1A1A;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
         }
 
-        .logo {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin: 0 0 10px 0;
-            letter-spacing: -1.5px;
+        .brand-title {
+            font-family: 'Montserrat', 'Roboto Mono', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            margin: 0;
+            text-transform: uppercase;
+            color: #000000;
         }
 
-        .info {
-            font-size: 0.9rem;
-            margin: 3px 0;
+        .brand-subtitle {
+            font-size: 11px;
+            font-weight: 600;
+            margin: 4px 0 0 0;
+            letter-spacing: 0.5px;
+            color: #444444;
+        }
+
+        .ticket-badge {
+            display: inline-block;
+            border: 2px solid #000000;
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 800;
+            margin: 12px 0 6px 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .meta-grid {
+            font-size: 12px;
+            margin-top: 10px;
             line-height: 1.5;
         }
 
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .meta-label {
+            font-weight: 700;
+            color: #000000;
+        }
+
+        .meta-val {
+            font-weight: 500;
+            color: #111111;
+            text-align: right;
+        }
+
+        /* Tabla de Productos Monocromática */
         .table-items {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85rem;
-            margin-bottom: 20px;
+            font-size: 12px;
+            margin: 8px 0;
         }
 
         .table-items th {
             text-align: left;
-            border-bottom: 1px solid #1A1A1A;
-            padding-bottom: 8px;
-            font-weight: 700;
+            border-bottom: 2px solid #000000;
+            border-top: 2px solid #000000;
+            padding: 7px 0;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.5px;
         }
 
         .table-items td {
-            padding: 10px 0;
+            padding: 7px 0;
             vertical-align: top;
+            border-bottom: 1px dashed #cccccc;
         }
 
-        .col-qty { width: 15%; text-align: center; }
-        .col-prod { width: 55%; padding-right: 10px; }
-        .col-sub { width: 30%; text-align: right; }
+        .col-qty { width: 14%; text-align: center; font-weight: 700; font-size: 13px; }
+        .col-desc { width: 56%; padding-right: 8px; }
+        .col-total { width: 30%; text-align: right; font-weight: 700; font-size: 13px; }
 
-        .totals {
-            border-top: 2px dashed #1A1A1A;
-            padding-top: 20px;
-            margin-bottom: 25px;
+        .item-name {
+            font-weight: 700;
+            font-size: 12.5px;
+            color: #000000;
         }
 
-        .total-row {
+        .item-detail {
+            font-size: 11px;
+            color: #555555;
+            margin-top: 2px;
+        }
+
+        /* Totales */
+        .totals-block {
+            margin-top: 8px;
+        }
+
+        .total-line {
             display: flex;
             justify-content: space-between;
-            font-size: 1.4rem;
-            font-weight: 700;
-            /* Branding Inyectado: Resalte estricto en Azul Turquesa (#A3D8DE) */
-            background-color: #A3D8DE;
-            padding: 12px 15px;
-            border-radius: 6px;
-            border: 1px solid #1A1A1A;
+            font-size: 12.5px;
+            padding: 3px 0;
+        }
+
+        .grand-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 900;
+            border-top: 2px solid #000000;
+            border-bottom: 2px solid #000000;
+            padding: 10px 0;
+            margin: 10px 0;
+            letter-spacing: -0.3px;
+        }
+
+        /* Desglose de Pagos */
+        .payments-box {
+            border: 1.5px solid #000000;
+            padding: 8px 12px;
+            margin: 12px 0 6px 0;
+            background-color: #FAFAFA;
+        }
+
+        .payments-title {
+            text-align: center;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
         }
 
         .footer {
             text-align: center;
-            font-size: 0.85rem;
-            margin-top: 30px;
+            font-size: 11.5px;
+            margin-top: 18px;
+            line-height: 1.45;
+        }
+
+        .footer-thanks {
+            font-weight: 800;
+            font-size: 13px;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
         }
 
         .btn-print {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             width: 100%;
-            padding: 15px;
-            background-color: #1A1A1A;
+            padding: 14px;
+            background-color: #121214;
             color: #FFFFFF;
-            border: 2px solid #1A1A1A;
-            font-size: 1.1rem;
-            border-radius: 6px;
-            font-weight: bold;
+            border: 2px solid #121214;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 800;
             cursor: pointer;
-            margin-top: 30px;
+            margin-top: 22px;
             font-family: inherit;
-            transition: 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
         }
 
         .btn-print:hover {
             background-color: #FFFFFF;
-            color: #1A1A1A;
+            color: #121214;
         }
 
-        /* MEDIA QUERY DE IMPRESIÓN RIGUROSA: Las reglas CSS aquí omiten UI inútil al imprimir en papel */
         @media print {
-            body { background-color: #FFFFFF; padding: 0; display: block; }
-            .ticket { box-shadow: none; max-width: 100%; padding: 0; margin: 0 auto; width: 80mm; border: none; }
-            .btn-print { display: none; }
-            .total-row { background-color: transparent !important; border: none !important; padding: 10px 0 !important; }
-            .total-row * { color: #1A1A1A !important; } /* Desactivar Azul para impresiones monocromas */
+            body { 
+                background-color: #FFFFFF; 
+                padding: 0; 
+                margin: 0;
+                display: block; 
+            }
+            .ticket { 
+                box-shadow: none; 
+                max-width: 100%; 
+                width: 80mm; 
+                padding: 4px 2px; 
+                margin: 0 auto; 
+                border-radius: 0;
+            }
+            .btn-print { 
+                display: none !important; 
+            }
         }
     </style>
 </head>
 <body>
 
 <div class="ticket">
+    <!-- Header Mejorado -->
     <div class="header">
-        <h1 class="logo">EL GOLDY</h1>
-        {% if venta.numero_turno %}
-        <div style="font-size: 2.5rem; font-weight: bold; margin: 15px 0; border: 2px solid #1A1A1A; padding: 10px; border-radius: 8px; text-align: center;">
-            TURNO #{{ '%03d' | format(venta.numero_turno) }}
+        <h1 class="brand-title">HARRY BEER STATION</h1>
+        <p class="brand-subtitle">Bogotá, Colombia</p>
+        
+        <div class="ticket-badge">
+            COMPROBANTE #{{ "%05d"|format(venta.id) }}
         </div>
-        {% endif %}
-        <p class="info">Folio / Ticket: #{{ venta.id }}</p>
-        <p class="info">Expedido: {{ venta.fecha_venta.strftime('%d/%m/%Y %H:%M') }}</p>
-        <p class="info">Cajero Asignado: {{ venta.vendedor.nombre }}</p>
-        <p class="info" style="font-weight: bold; text-transform: uppercase;">
-            {% if venta.pagos|length > 1 %}
-                Método de Pago: PAGO DIVIDIDO
-            {% elif venta.pagos|length == 1 %}
-                Método de Pago: {{ venta.pagos[0].metodo_pago|upper }}
-            {% else %}
-                Método de Pago: {{ venta.metodo_pago|upper }}
-            {% endif %}
-        </p>
+
+        <div class="divider-solid"></div>
+
+        <div class="meta-grid text-left">
+            <div class="meta-row">
+                <span class="meta-label">FECHA / HORA:</span>
+                <span class="meta-val">{{ venta.fecha_venta.strftime('%d/%m/%Y %I:%M %p') }}</span>
+            </div>
+            
+            <div class="meta-row">
+                <span class="meta-label">SERVICIO:</span>
+                <span class="meta-val">
+                    {% if venta.mesa %}
+                        {{ venta.mesa.nombre|upper }}
+                    {% else %}
+                        VENTA DIRECTA EN CAJA
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="meta-row">
+                <span class="meta-label">ATENDIDO POR:</span>
+                <span class="meta-val">
+                    {% if venta.mesero and venta.vendedor and venta.mesero.id != venta.vendedor.id %}
+                        {{ venta.mesero.nombre|upper }} (CAJA: {{ venta.vendedor.nombre|upper }})
+                    {% else %}
+                        {{ venta.vendedor.nombre|upper }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
     </div>
 
+    <!-- Tabla de Ítems -->
     <table class="table-items">
         <thead>
             <tr>
                 <th class="col-qty">CANT</th>
-                <th class="col-prod">CONCEPTO</th>
-                <th class="col-sub">IMPORTE</th>
+                <th class="col-desc">DESCRIPCIÓN</th>
+                <th class="col-total">TOTAL</th>
             </tr>
         </thead>
         <tbody>
-            {% for detalle in venta.detalles %}
+            {% for d in venta.detalles %}
             <tr>
-                <td class="col-qty">{{ detalle.cantidad_vendida }}</td>
-                <!-- Cortar la longitud del título si es gigantesco para no descuadrar la ticketera -->
-                <td class="col-prod">
-                    {% if detalle.nombre_manual %}
-                        {{ detalle.nombre_manual[:40] }}{% if detalle.nombre_manual|length > 40 %}...{% endif %}
-                    {% else %}
-                        {{ detalle.producto.nombre[:40] }}{% if detalle.producto.nombre|length > 40 %}...{% endif %}
-                        {% if detalle.variante %}
-                            <br><small style="font-size: 0.75rem;">{{ detalle.variante.nombre_variante }}</small>
+                <td class="col-qty">{{ d.cantidad_vendida }}</td>
+                <td class="col-desc">
+                    <div class="item-name">
+                        {% if d.nombre_manual %}
+                            {{ d.nombre_manual }}
+                        {% else %}
+                            {{ d.producto.nombre }}
                         {% endif %}
-                        {% if detalle.notas %}
-                            <br><small style="font-size: 0.75rem; font-style: italic; font-weight: bold;">* {{ detalle.notas }}</small>
-                        {% endif %}
+                    </div>
+                    {% if d.variante %}
+                        <div class="item-detail">({{ d.variante.nombre_variante }})</div>
+                    {% endif %}
+                    {% if d.es_cortesia %}
+                        <div class="item-detail fw-bold">[CORTESÍA / REGALO{% if d.cortesia_para %}: {{ d.cortesia_para }}{% endif %}]</div>
+                    {% endif %}
+                    {% if d.notas %}
+                        <div class="item-detail">* {{ d.notas }}</div>
                     {% endif %}
                 </td>
-                <td class="col-sub">${{ (detalle.precio_venta_final * detalle.cantidad_vendida)|cop }}</td>
+                <td class="col-total">${{ (d.precio_venta_final * d.cantidad_vendida)|cop }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <div class="totals">
-        <div class="total-row">
-            <span>TOTAL:</span>
-            <span>${{ (venta.monto_total)|cop }}</span>
+    <!-- Totales -->
+    <div class="totals-block">
+        <div class="total-line">
+            <span class="fw-bold">SUBTOTAL:</span>
+            <span class="fw-bold">${{ (venta.monto_total - (venta.monto_propina or 0) + (venta.monto_descuento or 0))|cop }}</span>
         </div>
-        
-        {% if venta.pagos|length > 1 %}
-        <!-- Desglose de pagos mixtos -->
-        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
-            <p style="font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; text-align: center;">DESGLOSE DE PAGOS:</p>
-            {% for pago in venta.pagos %}
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 3px 0;">
-                <span style="text-transform: capitalize;">{{ pago.metodo_pago }}:</span>
-                <span style="font-weight: 700;">${{ (pago.monto)|cop }}</span>
-            </div>
-            {% endfor %}
+
+        {% if venta.monto_descuento and venta.monto_descuento > 0 %}
+        <div class="total-line">
+            <span>DESCUENTO:</span>
+            <span>-${{ venta.monto_descuento|cop }}</span>
         </div>
         {% endif %}
+
+        {% if venta.monto_propina and venta.monto_propina > 0 %}
+        <div class="total-line">
+            <span>PROPINA VOLUNTARIA:</span>
+            <span>+${{ venta.monto_propina|cop }}</span>
+        </div>
+        {% endif %}
+
+        {% if venta.aplica_recargo_datafono %}
+        <div class="total-line">
+            <span>RECARGO DATÁFONO:</span>
+            <span>INCLUIDO</span>
+        </div>
+        {% endif %}
+
+        <div class="grand-total">
+            <span>TOTAL A PAGAR:</span>
+            <span>${{ venta.monto_total|cop }}</span>
+        </div>
     </div>
 
+    <!-- Desglose de Pagos -->
+    {% if venta.pagos|length > 1 %}
+    <div class="payments-box">
+        <div class="payments-title">*** DESGLOSE DE PAGO DIVIDIDO ***</div>
+        {% for pago in venta.pagos %}
+        <div class="total-line" style="font-size: 11.5px;">
+            <span>#{{ loop.index }} {{ pago.metodo_pago|upper }}:</span>
+            <span class="fw-bold">${{ pago.monto|cop }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif venta.pagos|length == 1 %}
+    <div class="total-line fw-bold" style="font-size: 12.5px; margin: 6px 0;">
+        <span>FORMA DE PAGO:</span>
+        <span>{{ venta.pagos[0].metodo_pago|upper }}</span>
+    </div>
+    {% else %}
+    <div class="total-line fw-bold" style="font-size: 12.5px; margin: 6px 0;">
+        <span>FORMA DE PAGO:</span>
+        <span>{{ venta.metodo_pago|upper }}</span>
+    </div>
+    {% endif %}
+
+    <div class="divider-dashed"></div>
+
+    <!-- Footer Amigable -->
     <div class="footer">
-        <p style="font-size: 1rem; font-weight: bold;">¡Gracias por tu compra!</p>
-        <p>Políticas de Tienda: Devoluciones únicamente presentando ticket impreso o digital.</p>
-        <p>Soporte: info@elgoldy.com</p>
+        <div class="footer-thanks">¡GRACIAS POR TU VISITA! 🍻</div>
+        <div>Síguenos en redes: <strong>@harrybeerstation</strong></div>
+        <div style="margin-top: 4px; color: #666666;">Conserva este comprobante de compra.</div>
     </div>
 
     <button class="btn-print" onclick="window.print()">
-        [ IMPRIMIR TICKET ]
+        <i class="fa-solid fa-print"></i> Imprimir Ticket
     </button>
 </div>
 
-<!-- Lógica de Auto-Impresión Reactiva -->
 <script>
-    // Evento silencioso que detona el pop-up de impresora nativo de Windows al renderizar
     window.onload = function() {
         setTimeout(() => {
             window.print();
-        }, 700); // 700ms de retraso para asegurar carga asíncrona de tipografías de Google
+        }, 500);
     };
 </script>
 

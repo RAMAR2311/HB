@@ -37,65 +37,83 @@ def calcular_totales_dia(ventas_del_dia):
 @arqueo_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
 def nuevo():
-    # Obtener fecha de la URL o usar hoy
-    fecha_str = request.args.get('fecha', obtener_hora_bogota().strftime('%Y-%m-%d'))
-    try:
-        fecha_seleccionada = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-    except ValueError:
-        fecha_seleccionada = obtener_hora_bogota().date()
-        fecha_str = fecha_seleccionada.strftime('%Y-%m-%d')
+    from models import Turno
+    turno_abierto = Turno.query.filter_by(estado='abierto').first()
+    
+    if not turno_abierto:
+        flash('No hay un turno abierto. Por favor, asegúrate de que exista un turno inicial.', 'warning')
+        return redirect(url_for('admin_bp.dashboard'))
 
-    # Calcular ventas del día usando el sistema híbrido (SalePayment + legacy)
-    ventas_del_dia = Sale.query.filter(db.func.date(Sale.fecha_venta) == fecha_seleccionada).all()
+    # Calcular ventas CERRADAS del Turno ordenadas cronológicamente
+    ventas_del_dia = Sale.query.filter_by(turno_id=turno_abierto.id).filter(Sale.estado_cuenta != 'abierta').order_by(Sale.fecha_venta.asc()).all()
     total_efectivo, total_transferencia = calcular_totales_dia(ventas_del_dia)
 
-    # Calcular gastos automáticos del día
-    gastos_diarios_registros = Expense.query.filter(
-        db.func.date(Expense.fecha_gasto) == fecha_seleccionada,
-        Expense.metodo_pago == 'efectivo'
+    # Métricas Operativas y Especiales del Turno
+    total_propinas_dia = float(sum(v.monto_propina or 0 for v in ventas_del_dia))
+    total_botellaje_dia = float(sum(v.total_botellaje or 0 for v in ventas_del_dia))
+    total_descuentos_dia = float(sum(v.monto_descuento or 0 for v in ventas_del_dia))
+    total_cortesias_dia = float(sum(v.monto_cortesia or 0 for v in ventas_del_dia))
+    total_ventas_bruto = float(total_efectivo + total_transferencia)
+
+    # Calcular gastos del Turno
+    gastos_diarios_registros = Expense.query.filter_by(
+        turno_id=turno_abierto.id,
+        metodo_pago='efectivo'
     ).all()
     gastos_automaticos = float(sum(g.monto for g in gastos_diarios_registros))
 
-    # Calcular gastos por productos externos del día
-    gastos_externos_registros = Expense.query.filter(
-        db.func.date(Expense.fecha_gasto) == fecha_seleccionada,
-        Expense.categoria == 'Pago Prod. Externo'
+    # Calcular gastos por productos externos del Turno
+    gastos_externos_registros = Expense.query.filter_by(
+        turno_id=turno_abierto.id,
+        categoria='Pago Prod. Externo'
     ).all()
     gastos_externos = float(sum(g.monto for g in gastos_externos_registros))
 
-    # Verificar si ya existe un arqueo GLOBAL para esa fecha (unificado para todos los usuarios)
-    arqueo_existente = ArqueoCaja.query.filter_by(fecha_arqueo=fecha_seleccionada).first()
+    # El Arqueo no está duplicado si el turno sigue abierto, pero por seguridad revisamos
+    arqueo_existente = ArqueoCaja.query.filter_by(turno_id=turno_abierto.id).first()
 
-    # Calcular base sugerida desde el arqueo anterior
-    ultimo_arqueo = ArqueoCaja.query.filter(ArqueoCaja.fecha_arqueo < fecha_seleccionada).order_by(ArqueoCaja.fecha_arqueo.desc()).first()
-    base_sugerida = 0.0
-    if ultimo_arqueo:
-        base_sugerida = float(ultimo_arqueo.base_inicial + ultimo_arqueo.total_efectivo_sistema - ultimo_arqueo.gastos_del_dia - ultimo_arqueo.retiro_grueso)
+    base_sugerida = float(turno_abierto.base_inicial)
 
     if request.method == 'POST':
-        # Doble verificación en el backend para evitar duplicados por concurrencia
-        if ArqueoCaja.query.filter_by(fecha_arqueo=fecha_seleccionada).first():
-            flash('Ya existe un arqueo cerrado para esta fecha. No se puede duplicar.', 'warning')
-            return redirect(url_for('arqueo_bp.reporte', fecha_inicio=fecha_str, fecha_fin=fecha_str))
+        if ArqueoCaja.query.filter_by(turno_id=turno_abierto.id).first():
+            flash('⚠️ Ya existe un arqueo para este turno.', 'warning')
+            return redirect(url_for('arqueo_bp.reporte'))
 
-        base_inicial = float(request.form.get('base_inicial', 0.0))
-        retiro_grueso = float(request.form.get('retiro_grueso', 0.0))
+        base_inicial_raw = request.form.get('base_inicial', '0').replace('.', '').replace(',', '')
+        efectivo_fisico_raw = request.form.get('efectivo_fisico_contado', '0').replace('.', '').replace(',', '')
+        digital_contado_raw = request.form.get('digital_contado', '0').replace('.', '').replace(',', '')
+
+        base_inicial = float(base_inicial_raw) if base_inicial_raw else 0.0
+        retiro_grueso = 0.0
+        efectivo_fisico_contado = float(efectivo_fisico_raw) if efectivo_fisico_raw else 0.0
+        digital_contado = float(digital_contado_raw) if digital_contado_raw else 0.0
         
-        # Recalcular gastos automáticos por seguridad en el backend
-        gastos_recalculados = Expense.query.filter(
-            db.func.date(Expense.fecha_gasto) == fecha_seleccionada,
-            Expense.metodo_pago == 'efectivo'
+        # Recalcular gastos automáticos por seguridad
+        gastos_recalculados = Expense.query.filter_by(
+            turno_id=turno_abierto.id,
+            metodo_pago='efectivo'
         ).all()
         gastos_del_dia = float(sum(g.monto for g in gastos_recalculados))
         
+        # Cálculo contable de diferencia
+        esperado = (base_inicial + float(total_efectivo)) - gastos_del_dia - retiro_grueso
+        diferencia = efectivo_fisico_contado - esperado
+
         observaciones_gastos = request.form.get('observaciones_gastos', '').strip()
 
         nuevo_arqueo = ArqueoCaja(
             vendedor_id=current_user.id,
-            fecha_arqueo=fecha_seleccionada,
+            turno_id=turno_abierto.id,
+            fecha_arqueo=obtener_hora_bogota().date(),
             base_inicial=base_inicial,
             gastos_del_dia=gastos_del_dia,
             retiro_grueso=retiro_grueso,
+            efectivo_fisico_contado=efectivo_fisico_contado,
+            digital_contado=digital_contado,
+            diferencia=diferencia,
+            total_propinas=total_propinas_dia,
+            total_botellaje=total_botellaje_dia,
+            total_descuentos=total_descuentos_dia,
             observaciones_gastos=observaciones_gastos,
             total_efectivo_sistema=total_efectivo,
             total_transferencia_sistema=total_transferencia
@@ -103,18 +121,42 @@ def nuevo():
 
         try:
             db.session.add(nuevo_arqueo)
+            
+            # Cerrar el turno actual
+            turno_abierto.estado = 'cerrado'
+            turno_abierto.fecha_cierre = obtener_hora_bogota()
+            turno_abierto.usuario_cierre_id = current_user.id
+            turno_abierto.base_inicial = base_inicial # Actualizar la base inicial si fue modificada en el arqueo
+            
+            # Abrir el siguiente turno automáticamente
+            nuevo_turno = Turno(
+                numero_turno=turno_abierto.numero_turno + 1,
+                fecha_apertura=obtener_hora_bogota(),
+                estado='abierto',
+                usuario_apertura_id=current_user.id,
+                base_inicial=0.0 # Se deja en 0 para que la coloquen manualmente al cerrar
+            )
+            db.session.add(nuevo_turno)
+            
             db.session.commit()
-            flash('Arqueo de caja guardado exitosamente.', 'success')
-            return redirect(url_for('arqueo_bp.reporte', fecha_inicio=fecha_str, fecha_fin=fecha_str))
+            flash('✅ Arqueo de caja guardado exitosamente. Se ha abierto un nuevo turno automáticamente.', 'success')
+            return redirect(url_for('arqueo_bp.reporte'))
         except Exception as e:
             db.session.rollback()
-            flash('Ocurrió un error al guardar el arqueo de caja.', 'danger')
+            flash(f'❌ Error al guardar el arqueo de caja: {str(e)}', 'danger')
 
     return render_template(
         'arqueo/form.html',
-        fecha=fecha_str,
+        turno=turno_abierto,
+        fecha=obtener_hora_bogota().strftime('%Y-%m-%d'),
+        ventas_del_dia=ventas_del_dia,
         total_efectivo=total_efectivo,
         total_transferencia=total_transferencia,
+        total_ventas_bruto=total_ventas_bruto,
+        total_propinas_dia=total_propinas_dia,
+        total_botellaje_dia=total_botellaje_dia,
+        total_descuentos_dia=total_descuentos_dia,
+        total_cortesias_dia=total_cortesias_dia,
         arqueo_existente=arqueo_existente,
         gastos_automaticos=gastos_automaticos,
         gastos_externos=gastos_externos,
@@ -124,70 +166,91 @@ def nuevo():
 @arqueo_bp.route('/reporte', methods=['GET'])
 @login_required
 def reporte():
-    fecha_inicio_str = request.args.get('fecha_inicio', obtener_hora_bogota().strftime('%Y-%m-%d'))
-    fecha_fin_str = request.args.get('fecha_fin', obtener_hora_bogota().strftime('%Y-%m-%d'))
-
-    try:
-        fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
-        fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
-    except ValueError:
-        fecha_inicio = obtener_hora_bogota().date()
-        fecha_fin = obtener_hora_bogota().date()
-
-
-    # Arqueo unificado: todos los usuarios ven los mismos arqueos (ya no se filtra por vendedor)
-    query = ArqueoCaja.query.filter(ArqueoCaja.fecha_arqueo >= fecha_inicio, ArqueoCaja.fecha_arqueo <= fecha_fin)
-
-    arqueos = query.order_by(ArqueoCaja.fecha_arqueo.desc()).all()
-
-    # Cálculos globales para el reporte
-    resumen = {
-        'total_base': sum(a.base_inicial for a in arqueos),
-        'total_efectivo': sum(a.total_efectivo_sistema for a in arqueos),
-        'total_transferencia': sum(a.total_transferencia_sistema for a in arqueos),
-        'total_gastos': sum(a.gastos_del_dia for a in arqueos)
-    }
+    turno_id = request.args.get('turno_id', type=int)
     
-    resumen['total_recaudado_bruto'] = resumen['total_efectivo'] + resumen['total_transferencia']
-    # Restar TOTAL DE GASTOS de la venta neta (Los gastos externos ya están incluidos en total_gastos si se registran como Gasto Diario)
-    resumen['total_recaudado_neto'] = resumen['total_recaudado_bruto'] - resumen['total_gastos']
+    # Obtener lista de arqueos según el rol
+    if current_user.rol == 'admin':
+        lista_arqueos = ArqueoCaja.query.order_by(ArqueoCaja.id.desc()).all()
+    else:
+        lista_arqueos = ArqueoCaja.query.filter_by(vendedor_id=current_user.id).order_by(ArqueoCaja.id.desc()).limit(10).all()
+        
+    if not lista_arqueos:
+        flash('No hay arqueos registrados.', 'info')
+        return redirect(url_for('admin_bp.dashboard'))
+
+    # Si no se envía turno_id, usar el más reciente de la lista permitida
+    if not turno_id:
+        arqueo_actual = lista_arqueos[0]
+    else:
+        arqueo_actual = ArqueoCaja.query.filter_by(turno_id=turno_id).first()
+        # Verificar permisos
+        if current_user.rol != 'admin' and arqueo_actual and arqueo_actual.vendedor_id != current_user.id:
+            flash('No tienes permiso para ver este arqueo.', 'danger')
+            return redirect(url_for('arqueo_bp.reporte'))
+
+    if not arqueo_actual:
+        flash('Arqueo no encontrado.', 'danger')
+        return redirect(url_for('arqueo_bp.reporte'))
+        
+    ventas_periodo = Sale.query.filter_by(turno_id=arqueo_actual.turno_id).order_by(Sale.fecha_venta.desc()).all()
+    from models import Expense
+    gastos_periodo = Expense.query.filter_by(turno_id=arqueo_actual.turno_id).order_by(Expense.fecha_gasto.desc()).all()
+
+    efectivo_esperado = (arqueo_actual.base_inicial + arqueo_actual.total_efectivo_sistema) - arqueo_actual.gastos_del_dia - arqueo_actual.retiro_grueso
+    digital_esperado = arqueo_actual.total_transferencia_sistema
     
-    # Calcular los gastos que fueron pagados en EFECTIVO
-    gastos_efectivo_query = Expense.query.filter(
-        db.func.date(Expense.fecha_gasto) >= fecha_inicio,
-        db.func.date(Expense.fecha_gasto) <= fecha_fin,
-        Expense.metodo_pago == 'efectivo'
-    ).all()
-    resumen['total_gastos_efectivo'] = sum(g.monto for g in gastos_efectivo_query)
+    diferencia_efectivo = arqueo_actual.efectivo_fisico_contado - efectivo_esperado
+    diferencia_digital = arqueo_actual.digital_contado - digital_esperado
 
-    # El efectivo esperado en caja descuenta gastos en EFECTIVO
-    resumen['efectivo_esperado'] = (resumen['total_base'] + resumen['total_efectivo']) - resumen['total_gastos_efectivo']
-
-    # Obtener todas las ventas del periodo para el detalle en la "tirilla" (unificado)
-    ventas_query = Sale.query.filter(
-        db.func.date(Sale.fecha_venta) >= fecha_inicio,
-        db.func.date(Sale.fecha_venta) <= fecha_fin
-    )
-    
-    ventas_periodo = ventas_query.order_by(Sale.fecha_venta.asc()).all()
-
-    fecha_generacion = obtener_hora_bogota().strftime('%Y-%m-%d %H:%M')
-
-
-    
-    # Obtener todos los gastos del periodo para el reporte detallado
-    gastos_periodo = Expense.query.filter(
-        db.func.date(Expense.fecha_gasto) >= fecha_inicio,
-        db.func.date(Expense.fecha_gasto) <= fecha_fin
-    ).order_by(Expense.fecha_gasto.asc()).all()
+    fecha_generacion = obtener_hora_bogota().strftime('%d/%m/%Y %I:%M %p')
 
     return render_template(
         'arqueo/reporte.html',
-        arqueos=arqueos,
-        resumen=resumen,
-        fecha_inicio=fecha_inicio_str,
-        fecha_fin=fecha_fin_str,
-        fecha_generacion=fecha_generacion,
+        lista_arqueos=lista_arqueos,
+        arqueo=arqueo_actual,
         ventas_periodo=ventas_periodo,
-        gastos_periodo=gastos_periodo
+        gastos_periodo=gastos_periodo,
+        efectivo_esperado=efectivo_esperado,
+        digital_esperado=digital_esperado,
+        diferencia_efectivo=diferencia_efectivo,
+        diferencia_digital=diferencia_digital,
+        fecha_generacion=fecha_generacion
     )
+
+@arqueo_bp.route('/anular/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def anular(id):
+    from models import Turno, Expense
+    try:
+        arqueo_a_anular = ArqueoCaja.query.get_or_404(id)
+        turno_original = Turno.query.get(arqueo_a_anular.turno_id)
+        
+        # Buscar si existe un turno siguiente que se haya abierto al hacer este arqueo
+        turno_siguiente = Turno.query.filter(Turno.numero_turno > turno_original.numero_turno).order_by(Turno.numero_turno.asc()).first()
+        
+        # Mover las ventas del turno siguiente al original si existen
+        if turno_siguiente:
+            ventas = Sale.query.filter_by(turno_id=turno_siguiente.id).all()
+            gastos = Expense.query.filter_by(turno_id=turno_siguiente.id).all()
+            for v in ventas:
+                v.turno_id = turno_original.id
+                v.numero_turno = turno_original.numero_turno
+            for g in gastos:
+                g.turno_id = turno_original.id
+            
+            db.session.delete(turno_siguiente)
+            
+        turno_original.estado = 'abierto'
+        turno_original.fecha_cierre = None
+        turno_original.usuario_cierre_id = None
+        
+        db.session.delete(arqueo_a_anular)
+        db.session.commit()
+        
+        flash('Arqueo anulado exitosamente. El turno anterior ha sido reabierto.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al anular arqueo: {str(e)}', 'danger')
+        
+    return redirect(url_for('arqueo_bp.reporte'))

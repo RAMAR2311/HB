@@ -2,56 +2,56 @@
 
 {% block content %}
 <style>
-    /* Fondo limpio que mantiene la legibilidad */
     body {
-        background-color: var(--brand-bg) !important;
-        background-image: linear-gradient(135deg, var(--brand-bg) 0%, #eef3f5 100%);
+        background-color: var(--color-bg-main) !important;
     }
 
-    /* Opcional: Ocultar la barra solo en login */
     .navbar-custom {
         display: none !important;
     }
 </style>
 
 <div class="row align-items-center justify-content-evenly" style="min-height: 85vh;">
-    <!-- Columna Izquierda: Cuadro de Acceso Segregado -->
+    <!-- Columna Izquierda: Formulario de Login -->
     <div class="col-md-6 col-lg-5 mb-4">
-        <div class="card card-custom p-5 border-0 shadow-lg rounded-4" style="background-color: white; border-top: 5px solid var(--brand-yellow) !important;">
-            <div class="text-center mb-5">
-                <!-- Logo visible solo en móviles (la columna derecha se oculta) -->
-                <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo El Goldy" class="d-md-none mb-4" style="height: 120px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-                <h3 class="fw-bold text-brand-black">Acceso al Panel</h3>
-                <p class="text-muted">Introduce tus credenciales operativas</p>
+        <div class="card p-5 bg-white shadow-lg rounded-4" style="border: 2px solid var(--color-text-main); box-shadow: 6px 6px 0px var(--color-text-main) !important; border-top: 8px solid var(--color-secondary) !important;">
+            <div class="text-center mb-4">
+                <img src="{{ url_for('static', filename='img/icon 152x152.png') }}" alt="Logo Harry Beer" class="mb-3 rounded-circle shadow-sm" style="width: 80px; height: 80px; object-fit: cover; border: 2.5px solid var(--color-text-main);">
+                <h3 class="fw-extrabold text-dark font-heading mb-1">HARRY BEER <span style="color: var(--color-primary);">STATION</span></h3>
+                <small class="text-muted d-block mb-3">Introduce tus credenciales para ingresar al turno</small>
             </div>
             
             <form method="POST" action="/auth/login">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-4">
-                    <label class="form-label fw-bold text-brand-black">Correo Electrónico</label>
-                    <input type="email" class="form-control form-control-lg bg-light border-0" name="email" required placeholder="tu@elgoldy.com">
+                    <label class="form-label fw-bold text-dark small font-heading">Correo Electrónico</label>
+                    <input type="email" class="form-control form-control-lg bg-light border py-3 fw-semibold" name="email" required placeholder="admin@harrybeerstation.com">
                 </div>
                 
-                <div class="mb-5">
-                    <label class="form-label fw-bold text-brand-black">Contraseña</label>
-                    <input type="password" class="form-control form-control-lg bg-light border-0" name="password" required placeholder="••••••••">
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark small font-heading">Contraseña</label>
+                    <input type="password" class="form-control form-control-lg bg-light border py-3" name="password" required placeholder="••••••••">
                 </div>
                 
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-yellow btn-lg rounded-pill shadow-sm">
-                        Ingresar <i class="fa-solid fa-arrow-right ms-2"></i>
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-hb-secondary btn-lg py-3 shadow-sm font-heading">
+                        Ingresar a la Plataforma <i class="fa-solid fa-arrow-right ms-2"></i>
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Columna Derecha: Logo Central y Limpio -->
-    <div class="col-md-6 col-lg-6 d-none d-md-flex justify-content-center align-items-center text-center">
-        <!-- Logo a la altura del usuario sin solapamiento -->
-        <div class="d-flex flex-column justify-content-center align-items-center h-100 text-center text-brand-black p-5">
-            <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo El Goldy" class="mb-4" style="max-width: 80%; height: auto; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
-            <p class="lead fw-bold" style="color: var(--brand-black);">Sistema Integrado de Ventas y Gestión Operativa</p>
+    <!-- Columna Derecha: Brand Card -->
+    <div class="col-md-6 col-lg-5 d-none d-md-flex justify-content-center align-items-center text-center">
+        <div class="p-5 rounded-4 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 6px 6px 0px var(--color-text-main);">
+            <div class="mb-4">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Harry Beer Station" class="img-fluid" style="max-height: 200px; object-fit: contain;">
+            </div>
+            <h2 class="fw-extrabold font-heading text-dark mb-1">HARRY BEER STATION</h2>
+            <p class="font-brand fs-4 mb-3" style="color: var(--color-secondary);">Craft Brewery & Kitchen</p>
+            <hr style="border-color: var(--color-border);">
+            <p class="text-muted small m-0">Plataforma Integrada de Punto de Venta, Gestión de Mesas, Control de Inventario y Liquidación de Turnos.</p>
         </div>
     </div>
 </div>
