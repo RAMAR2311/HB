@@ -102,13 +102,6 @@ def create_app():
         # Por defecto, Vendedores van directo a Cajas
         return redirect(url_for('sales_bp.procesar_venta'))
 
-    return app
-
-# Definición global para Gunicorn
-app = create_app()
-
-if __name__ == '__main__':
-    # ---------------- LÓGICA DE INICIALIZACIÓN ----------------
     # =========================================================================
     # CONFIGURACIÓN PWA
     # =========================================================================
@@ -125,6 +118,14 @@ if __name__ == '__main__':
     def offline():
         from flask import render_template
         return render_template('offline.html')
+
+    return app
+
+# Definición global para Gunicorn
+app = create_app()
+
+if __name__ == '__main__':
+    # ---------------- LÓGICA DE INICIALIZACIÓN ----------------
 
     with app.app_context():
         from models import db, User
