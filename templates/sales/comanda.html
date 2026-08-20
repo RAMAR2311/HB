@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Roboto Mono', monospace; background-color: #333333; padding: 20px; color: #000000; }
-        .ticket { background: #fff; border: 2px solid #000; padding: 20px; max-width: 380px; margin: 0 auto 30px auto; }
+        .ticket { background: #fff; border: 2px solid #000; padding: 10px; max-width: 280px; margin: 0 auto 30px auto; font-size: 11px; }
         .ticket-header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
         .ticket-section { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #000; }
         .badge-cortesia { background: #000; color: #fff; padding: 2px 6px; font-size: 0.75rem; font-weight: bold; }
@@ -19,7 +19,7 @@
         @media print {
             body { background-color: #fff; padding: 0; }
             .no-print { display: none !important; }
-            .ticket { border: none; padding: 5px 0; max-width: 100%; width: 80mm; box-shadow: none; margin: 0 auto 20px auto; }
+            .ticket { border: none; padding: 5px 0; max-width: 100%; width: 58mm; box-shadow: none; margin: 0 auto 20px auto; }
         }
     </style>
 </head>
@@ -44,12 +44,12 @@
     {% if items_barra %}
     <div class="ticket">
         <div class="ticket-header">
-            <div class="brand-comanda fs-5">HARRY BEER STATION</div>
-            <h4 class="fw-bold m-0 mt-1">🍺 COMANDA DE BARRA</h4>
+            <div class="brand-comanda fs-6">HARRY BEER STATION</div>
+            <h5 class="fw-bold m-0 mt-1">🍺 COMANDA DE BARRA</h5>
             {% if es_adicion %}
-                <div class="badge bg-danger fs-6 px-3 my-1">⚡ ADICIÓN / NUEVO PEDIDO</div>
+                <div class="badge bg-danger fs-6 px-2 my-1">⚡ ADICIÓN / NUEVO PEDIDO</div>
             {% else %}
-                <div class="badge bg-dark fs-6 px-3 my-1">📄 CUENTA ACUMULADA TOTAL</div>
+                <div class="badge bg-dark fs-6 px-2 my-1">📄 CUENTA ACUMULADA TOTAL</div>
             {% endif %}
             <div class="small fw-bold">ORDEN #{{ '%04d'|format(venta.id) }} | {{ venta.fecha_venta.strftime('%I:%M %p') }}</div>
             {% if venta.mesa %}
@@ -65,10 +65,10 @@
         <div class="ticket-section">
             <ul class="list-unstyled mb-0">
                 {% for item in items_barra %}
-                <li class="d-flex justify-content-between align-items-start mb-2 fs-5 fw-bold">
+                <li class="d-flex justify-content-between align-items-start mb-2 fs-6 fw-bold">
                     <span>
                         {{ item.cantidad }}x {{ item.nombre }}
-                        {% if item.es_cortesia %} <span class="badge-cortesia">[REGALO / CORTESÍA {% if item.cortesia_para %}: {{ item.cortesia_para }}{% endif %}]</span>{% endif %}
+                        {% if item.es_cortesia %} <span class="badge-cortesia">[REGALO]</span>{% endif %}
                     </span>
                 </li>
                 {% if item.notas %}
@@ -84,12 +84,12 @@
     {% if items_cocina %}
     <div class="ticket">
         <div class="ticket-header">
-            <div class="brand-comanda fs-5">HARRY BEER STATION</div>
-            <h4 class="fw-bold m-0 mt-1">🍔 COMANDA DE COCINA</h4>
+            <div class="brand-comanda fs-6">HARRY BEER STATION</div>
+            <h5 class="fw-bold m-0 mt-1">🍔 COMANDA DE COCINA</h5>
             {% if es_adicion %}
-                <div class="badge bg-danger fs-6 px-3 my-1">⚡ ADICIÓN / NUEVO PEDIDO</div>
+                <div class="badge bg-danger fs-6 px-2 my-1">⚡ ADICIÓN / NUEVO PEDIDO</div>
             {% else %}
-                <div class="badge bg-dark fs-6 px-3 my-1">📄 CUENTA ACUMULADA TOTAL</div>
+                <div class="badge bg-dark fs-6 px-2 my-1">📄 CUENTA ACUMULADA TOTAL</div>
             {% endif %}
             <div class="small fw-bold">ORDEN #{{ '%04d'|format(venta.id) }} | {{ venta.fecha_venta.strftime('%I:%M %p') }}</div>
             {% if venta.mesa %}
@@ -105,10 +105,10 @@
         <div class="ticket-section">
             <ul class="list-unstyled mb-0">
                 {% for item in items_cocina %}
-                <li class="d-flex justify-content-between align-items-start mb-2 fs-5 fw-bold">
+                <li class="d-flex justify-content-between align-items-start mb-2 fs-6 fw-bold">
                     <span>
                         {{ item.cantidad }}x {{ item.nombre }}
-                        {% if item.es_cortesia %} <span class="badge-cortesia">[REGALO / CORTESÍA {% if item.cortesia_para %}: {{ item.cortesia_para }}{% endif %}]</span>{% endif %}
+                        {% if item.es_cortesia %} <span class="badge-cortesia">[REGALO]</span>{% endif %}
                     </span>
                 </li>
                 {% if item.notas %}
