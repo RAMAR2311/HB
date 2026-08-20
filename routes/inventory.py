@@ -307,19 +307,7 @@ def nuevo():
                         flash(f'📄 Se cargó automáticamente una factura por ${total_compra:,.0f} a la cuenta del proveedor "{prov.nombre}".'.replace(',', '.'), 'info')
 
             # Sincronización de Recetas / Composición de Combos
-            if tipo_prod == 'combo':
-                c_prods = request.form.getlist('combo_producto_id[]')
-                c_cants = request.form.getlist('combo_cantidad[]')
-                for i in range(len(c_prods)):
-                    if c_prods[i]:
-                        receta = Receta(
-                            producto_final_id=nuevo_prod.id,
-                            insumo_id=int(c_prods[i]),
-                            cantidad_requerida=float(c_cants[i] or 1.0)
-                        )
-                        db.session.add(receta)
-                db.session.commit()
-            elif tipo_prod in ['preparado', 'producto_final']:
+            if tipo_prod in ['combo', 'preparado', 'producto_final']:
                 r_insumos = request.form.getlist('receta_insumo_id[]')
                 r_cants = request.form.getlist('receta_cantidad[]')
                 for i in range(len(r_insumos)):
@@ -590,18 +578,7 @@ def editar_producto(id):
             # Sincronización de Recetas / Composición de Combos
             Receta.query.filter_by(producto_final_id=producto.id).delete()
             
-            if tipo_prod == 'combo':
-                c_prods = request.form.getlist('combo_producto_id[]')
-                c_cants = request.form.getlist('combo_cantidad[]')
-                for i in range(len(c_prods)):
-                    if c_prods[i]:
-                        receta = Receta(
-                            producto_final_id=producto.id,
-                            insumo_id=int(c_prods[i]),
-                            cantidad_requerida=float(c_cants[i] or 1.0)
-                        )
-                        db.session.add(receta)
-            elif tipo_prod in ['preparado', 'producto_final']:
+            if tipo_prod in ['combo', 'preparado', 'producto_final']:
                 r_insumos = request.form.getlist('receta_insumo_id[]')
                 r_cants = request.form.getlist('receta_cantidad[]')
                 for i in range(len(r_insumos)):
