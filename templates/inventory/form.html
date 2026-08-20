@@ -49,6 +49,9 @@
                             <option value="preparado" {% if producto and producto.tipo_producto == 'preparado' %}selected{% endif %}>
                                 🍸 Cóctel / Plato Preparado (Receta de insumos: Mojito, Picada)
                             </option>
+                            <option value="combo" {% if (producto and producto.tipo_producto == 'combo') or (not producto and request.args.get('tipo') == 'combo') %}selected{% endif %}>
+                                📦 Combo / Promoción (Agrupa productos: Baldes, Promos)
+                            </option>
                             <option value="insumo" {% if producto and producto.tipo_producto == 'insumo' %}selected{% endif %}>
                                 🌿 Insumo / Materia Prima (Licor por trago, carnes, salsas, etc.)
                             </option>
@@ -274,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleTipoProducto() {
         const val = tipoSelect.value;
         
-        if (val === 'preparado') {
+        if (val === 'preparado' || val === 'combo') {
             divStock.classList.add('d-none');
             divCosto.classList.add('d-none');
             divPrecio.classList.remove('d-none');
