@@ -228,9 +228,9 @@
                                 <div class="col-md-7 col-7">
                                     <label class="form-label small text-muted mb-1">Insumo</label>
                                     <select name="receta_insumo_id[]" class="form-select bg-light border-0 fw-bold">
-                                        <option value="">Seleccionar Materia Prima...</option>
-                                        {% for insumo in insumos %}
-                                        <option value="{{ insumo.id }}" {% if insumo.id == receta.insumo_id %}selected{% endif %}>{{ insumo.nombre }}</option>
+                                        <option value="">Seleccionar Ítem/Insumo...</option>
+                                        {% for p in todos_productos %}
+                                        <option value="{{ p.id }}" {% if p.id == receta.insumo_id %}selected{% endif %}>{{ p.nombre }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -375,11 +375,11 @@ document.addEventListener('DOMContentLoaded', function() {
         row.className = 'row g-2 mb-2 receta-line align-items-center bg-white p-2 rounded-3 border';
         row.innerHTML = `
             <div class="col-md-7 col-7">
-                <label class="form-label small text-muted mb-1">Insumo</label>
+                <label class="form-label small text-muted mb-1">Insumo / Ítem</label>
                 <select name="receta_insumo_id[]" class="form-select bg-light border-0 fw-bold">
-                    <option value="">Seleccionar Materia Prima...</option>
-                    {% for insumo in insumos %}
-                    <option value="{{ insumo.id }}">{{ insumo.nombre }}</option>
+                    <option value="">Seleccionar Ítem/Insumo...</option>
+                    {% for p in todos_productos %}
+                    <option value="{{ p.id }}">{{ p.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
