@@ -25,6 +25,8 @@ def index():
         turno_abierto = Turno.query.filter_by(estado='abierto').first()
         turno_filtro_id = turno_abierto.id if turno_abierto else -1
         # No usamos dt_inicio/dt_fin para turno_actual, filtraremos por turno_id luego
+        dt_inicio = None
+        dt_fin = None
     elif filtro == 'semana':
         inicio_sem = hoy - timedelta(days=hoy.weekday())
         dt_inicio = datetime.combine(inicio_sem, datetime.min.time())
@@ -51,6 +53,8 @@ def index():
         from models import Turno
         turno_abierto = Turno.query.filter_by(estado='abierto').first()
         turno_filtro_id = turno_abierto.id if turno_abierto else -1
+        dt_inicio = None
+        dt_fin = None
 
     # 1. BOTELLAJE
     query_botellaje = SaleDetail.query.join(Sale).filter(
