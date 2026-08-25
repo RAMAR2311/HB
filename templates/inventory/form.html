@@ -19,6 +19,7 @@
             <form method="POST" enctype="multipart/form-data" id="productForm">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="precio_minimo" value="0"/>
+                <input type="hidden" name="next_url" value="{{ request.referrer or '' }}"/>
                 
                 <div class="row g-4">
                     <!-- SKU y Nombre -->
@@ -33,8 +34,18 @@
                     
                     <!-- Categoría y Tipo de Producto -->
                     <div class="col-md-6 mt-3">
-                        <label class="form-label fw-bold text-brand-black">Categoría <span class="text-danger">*</span></label>
-                        <select class="form-select bg-light border-0" name="categoria_id" id="categoriaSelect" required>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <label class="form-label fw-bold text-brand-black mb-0">Categoría <span class="text-danger">*</span></label>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-brand-orange fw-bold text-decoration-none me-3" onclick="crearCategoriaRapida()">
+                                    <i class="fa-solid fa-plus-circle"></i> Nueva
+                                </button>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-danger fw-bold text-decoration-none" onclick="eliminarCategoriaRapida()">
+                                    <i class="fa-solid fa-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                        <select class="form-select bg-light border-0 mt-2" name="categoria_id" id="categoriaSelect" required>
                             <option value="">Selecciona una categoría...</option>
                             {% for cat in categorias %}
                             <option value="{{ cat.id }}" {% if (producto and producto.categoria_id == cat.id) or (not producto and request.args.get('tipo') == 'combo' and 'Combo' in cat.nombre) %}selected{% endif %}>
@@ -226,7 +237,7 @@
                     </div>
                     
                     <div id="recetasContainer">
-                        {% if producto and producto.es_preparado and producto.recetas %}
+                        {% if producto and (producto.es_preparado or producto.es_combo) and producto.recetas %}
                             {% for receta in producto.recetas %}
                             <div class="row g-2 mb-2 receta-line align-items-center bg-white p-2 rounded-3 border">
                                 <div class="col-md-7 col-7">
@@ -264,7 +275,163 @@
     </div>
 </div>
 
+<!-- Modal para Crear Categoría -->
+<div class="modal fade" id="modalCrearCategoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold text-brand-black">
+                    <i class="fa-solid fa-plus-circle text-brand-orange me-2"></i>Nueva Categoría
+                </h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <label class="form-label fw-bold text-dark small">Nombre de la Categoría</label>
+                <input type="text" id="inputNuevaCategoria" class="form-control bg-light border-0 py-2 shadow-none" placeholder="Ej: Vinos, Postres, etc.">
+                <div id="errorCategoria" class="text-danger small mt-2 d-none"></div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom">
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-bold text-muted" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-yellow rounded-pill px-4 fw-bold shadow-sm" style="background-color: #f59e0b; color: #111;" onclick="guardarCategoriaRapida()">
+                    <i class="fa-solid fa-check me-1"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Eliminar Categoría -->
+<div class="modal fade" id="modalEliminarCategoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold text-brand-black">
+                    <i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Eliminar Categoría
+                </h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="mb-0">¿Estás seguro de que deseas eliminar permanentemente la categoría <strong id="nombreCategoriaEliminar" class="text-brand-orange"></strong>?</p>
+                <div id="errorEliminarCategoria" class="text-danger small mt-3 d-none"></div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom justify-content-center">
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-bold text-muted" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm" onclick="confirmarEliminarCategoria()">
+                    <i class="fa-solid fa-trash me-1"></i> Sí, Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
+let modalCategoria;
+let modalEliminarCat;
+let categoriaIdAEliminar = null;
+
+function crearCategoriaRapida() {
+    if(!modalCategoria) {
+        modalCategoria = new bootstrap.Modal(document.getElementById('modalCrearCategoria'));
+    }
+    document.getElementById('inputNuevaCategoria').value = '';
+    document.getElementById('errorCategoria').classList.add('d-none');
+    modalCategoria.show();
+    setTimeout(() => document.getElementById('inputNuevaCategoria').focus(), 500);
+}
+
+function guardarCategoriaRapida() {
+    const nombre = document.getElementById('inputNuevaCategoria').value.trim();
+    const errorDiv = document.getElementById('errorCategoria');
+    
+    if (!nombre) {
+        errorDiv.textContent = 'Por favor ingresa un nombre para la categoría.';
+        errorDiv.classList.remove('d-none');
+        return;
+    }
+    errorDiv.classList.add('d-none');
+    
+    fetch('/inventory/categoria/nueva', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+        },
+        body: JSON.stringify({ nombre: nombre })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const select = document.getElementById('categoriaSelect');
+            const option = document.createElement('option');
+            option.value = data.id;
+            option.text = data.nombre;
+            select.add(option);
+            select.value = data.id;
+            modalCategoria.hide();
+        } else {
+            errorDiv.textContent = data.error;
+            errorDiv.classList.remove('d-none');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        errorDiv.textContent = "Error de conexión al crear categoría.";
+        errorDiv.classList.remove('d-none');
+    });
+}
+
+function eliminarCategoriaRapida() {
+    const select = document.getElementById('categoriaSelect');
+    const id = select.value;
+    const nombre = select.options[select.selectedIndex]?.text;
+    
+    if (!id) {
+        alert("Selecciona una categoría primero para poder eliminarla.");
+        return;
+    }
+    
+    categoriaIdAEliminar = id;
+    document.getElementById('nombreCategoriaEliminar').textContent = `"${nombre}"`;
+    document.getElementById('errorEliminarCategoria').classList.add('d-none');
+    
+    if(!modalEliminarCat) {
+        modalEliminarCat = new bootstrap.Modal(document.getElementById('modalEliminarCategoria'));
+    }
+    modalEliminarCat.show();
+}
+
+function confirmarEliminarCategoria() {
+    if (!categoriaIdAEliminar) return;
+    
+    const errorDiv = document.getElementById('errorEliminarCategoria');
+    const select = document.getElementById('categoriaSelect');
+    
+    fetch(`/inventory/categoria/eliminar/${categoriaIdAEliminar}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            select.remove(select.selectedIndex);
+            select.value = "";
+            modalEliminarCat.hide();
+        } else {
+            errorDiv.textContent = data.error;
+            errorDiv.classList.remove('d-none');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        errorDiv.textContent = "Error de conexión al eliminar categoría.";
+        errorDiv.classList.remove('d-none');
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const productForm = document.getElementById('productForm');
     const tipoSelect = document.getElementById('tipoProducto');
@@ -457,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const val = tipoSelect.value;
-            if (val === 'preparado') {
+            if (val === 'preparado' || val === 'combo') {
                 const selects = recetasContainer.querySelectorAll('select[name="receta_insumo_id[]"]');
                 let valid = false;
                 selects.forEach(s => { if (s.value) valid = true; });

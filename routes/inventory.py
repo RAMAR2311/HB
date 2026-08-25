@@ -12,6 +12,14 @@ from io import BytesIO
 
 inventory_bp = Blueprint('inventory_bp', __name__)
 
+def parse_float(val):
+    try:
+        if not val or str(val).strip() == '':
+            return 0.0
+        return float(val)
+    except ValueError:
+        return 0.0
+
 def guardar_imagen(file):
     """Procesa, valida, optimiza y guarda una imagen subida usando Pillow."""
     if not file or file.filename == '':
@@ -237,10 +245,10 @@ def nuevo():
             tipo_producto=tipo_prod,
             categoria_id=int(cat_id) if cat_id else None,
             cantidad_stock=stock_base,
-            precio_costo=float(request.form.get('precio_costo', 0.0) or 0.0),
-            precio_minimo=float(request.form.get('precio_minimo', 0.0) or 0.0),
-            precio_sugerido=float(request.form.get('precio_sugerido', 0.0) or 0.0),
-            comision_mesero=float(request.form.get('comision_mesero', 0.0) or 0.0),
+            precio_costo=parse_float(request.form.get('precio_costo')),
+            precio_minimo=parse_float(request.form.get('precio_minimo')),
+            precio_sugerido=parse_float(request.form.get('precio_sugerido')),
+            comision_mesero=parse_float(request.form.get('comision_mesero')),
             imagen=imagen_filename,
             observacion=request.form.get('observacion')
         )
@@ -255,10 +263,10 @@ def nuevo():
                 nueva_v = ProductVariant(
                     product_id=nuevo_prod.id,
                     nombre_variante=v_nombres[i],
-                    cantidad_stock=float(v_stocks[i] or 0.0),
-                    precio_costo=float(v_costos[i]) if v_costos[i] else nuevo_prod.precio_costo,
-                    precio_minimo=float(v_mins[i]) if v_mins[i] else nuevo_prod.precio_minimo,
-                    precio_sugerido=float(v_sugs[i]) if v_sugs[i] else nuevo_prod.precio_sugerido
+                    cantidad_stock=parse_float(v_stocks[i]),
+                    precio_costo=parse_float(v_costos[i]) if v_costos[i] else nuevo_prod.precio_costo,
+                    precio_minimo=parse_float(v_mins[i]) if v_mins[i] else nuevo_prod.precio_minimo,
+                    precio_sugerido=parse_float(v_sugs[i]) if v_sugs[i] else nuevo_prod.precio_sugerido
                 )
                 db.session.add(nueva_v)
 
@@ -321,6 +329,9 @@ def nuevo():
                 db.session.commit()
 
             flash(f'{nuevo_prod.tipo_label} "{nuevo_prod.nombre}" creado exitosamente.', 'success')
+            next_url = request.form.get('next_url')
+            if next_url and next_url.strip():
+                return redirect(next_url)
             return redirect(url_for('inventory_bp.index'))
         except Exception as e:
             db.session.rollback()
@@ -512,10 +523,10 @@ def editar_producto(id):
         producto.nombre = request.form.get('nombre').strip()
         producto.tipo_producto = tipo_prod
         producto.categoria_id = int(cat_id) if cat_id else None
-        producto.precio_costo = float(request.form.get('precio_costo', 0.0) or 0.0)
-        producto.precio_minimo = float(request.form.get('precio_minimo', 0.0) or 0.0)
-        producto.precio_sugerido = float(request.form.get('precio_sugerido', 0.0) or 0.0)
-        producto.comision_mesero = float(request.form.get('comision_mesero', 0.0) or 0.0)
+        producto.precio_costo = parse_float(request.form.get('precio_costo'))
+        producto.precio_minimo = parse_float(request.form.get('precio_minimo'))
+        producto.precio_sugerido = parse_float(request.form.get('precio_sugerido'))
+        producto.comision_mesero = parse_float(request.form.get('comision_mesero'))
         producto.observacion = request.form.get('observacion')
         
         # Sincronización de Variantes
@@ -606,6 +617,9 @@ def editar_producto(id):
                     db.session.commit()
                 
             flash(f'{producto.tipo_label} "{producto.nombre}" actualizado correctamente.', 'success')
+            next_url = request.form.get('next_url')
+            if next_url and next_url.strip():
+                return redirect(next_url)
             return redirect(url_for('inventory_bp.index'))
         except Exception as e:
             db.session.rollback()
@@ -776,6 +790,50 @@ def eliminar_variante(id):
         flash(f'Error grave en servidor al eliminar la variante: {str(e)}', 'danger')
         
     return redirect(url_for('inventory_bp.index'))
+
+@inventory_bp.route('/categoria/nueva', methods=['POST'])
+@login_required
+@admin_required
+def nueva_categoria_rapida():
+    data = request.get_json()
+    nombre = data.get('nombre', '').strip()
+    if not nombre:
+        return jsonify({'success': False, 'error': 'El nombre es requerido'})
+    
+    cat_existente = Categoria.query.filter_by(nombre=nombre).first()
+    if cat_existente:
+        return jsonify({'success': False, 'error': 'La categoría ya existe'})
+        
+    try:
+        nueva_cat = Categoria(nombre=nombre)
+        db.session.add(nueva_cat)
+        db.session.commit()
+        return jsonify({'success': True, 'id': nueva_cat.id, 'nombre': nueva_cat.nombre})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@inventory_bp.route('/categoria/eliminar/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def eliminar_categoria_rapida(id):
+    cat = Categoria.query.get(id)
+    if not cat:
+        return jsonify({'success': False, 'error': 'Categoría no encontrada'})
+        
+    if cat.nombre.lower() == 'combos' or cat.nombre.lower() == 'insumos':
+        return jsonify({'success': False, 'error': 'Esta es una categoría protegida del sistema y no se puede eliminar'})
+        
+    if Product.query.filter_by(categoria_id=id).first():
+        return jsonify({'success': False, 'error': 'Esta categoría tiene productos asignados. Reasígnalos o elimínalos antes de borrar la categoría.'})
+        
+    try:
+        db.session.delete(cat)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
 
 @inventory_bp.route('/plantilla-importacion')
 @login_required

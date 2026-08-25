@@ -138,15 +138,15 @@
                     {% for cat in categorias %}
                         {% set c_id = cat.id|string %}
                         {% set c_count = conteo_categorias.get(cat.id, 0) %}
-                        {% if 'Cerveza' in cat.nombre %}{% set icon = "🍺" %}{% set short = "Cervezas" %}
-                        {% elif 'Licor' in cat.nombre %}{% set icon = "🍾" %}{% set short = "Licores & Botellas" %}
-                        {% elif 'Cóctel' in cat.nombre or 'Coctel' in cat.nombre %}{% set icon = "🍸" %}{% set short = "Cócteles & Tragos" %}
-                        {% elif 'Comida' in cat.nombre or 'Platos' in cat.nombre %}{% set icon = "🍔" %}{% set short = "Comidas & Snacks" %}
-                        {% elif 'Alcohol' in cat.nombre or 'Bebida' in cat.nombre %}{% set icon = "🥤" %}{% set short = "Bebidas sin Alcohol" %}
-                        {% elif 'Combo' in cat.nombre %}{% set icon = "🎁" %}{% set short = "Combos" %}
-                        {% else %}{% set icon = "🌿" %}{% set short = "Insumos de Barra" %}{% endif %}
+                        {% if 'Cerveza' in cat.nombre %}{% set icon = "🍺" %}
+                        {% elif 'Licor' in cat.nombre %}{% set icon = "🍾" %}
+                        {% elif 'Cóctel' in cat.nombre or 'Coctel' in cat.nombre %}{% set icon = "🍸" %}
+                        {% elif 'Comida' in cat.nombre or 'Platos' in cat.nombre %}{% set icon = "🍔" %}
+                        {% elif 'Alcohol' in cat.nombre or 'Bebida' in cat.nombre %}{% set icon = "🥤" %}
+                        {% elif 'Combo' in cat.nombre %}{% set icon = "🎁" %}
+                        {% else %}{% set icon = "📁" %}{% endif %}
                         <option value="{{ cat.id }}" {% if categoria_filtro|string == c_id %}selected{% endif %}>
-                            {{ icon }} {{ short }} ({{ c_count }})
+                            {{ icon }} {{ cat.nombre }} ({{ c_count }})
                         </option>
                     {% endfor %}
                 </select>
@@ -590,7 +590,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         dropdown.innerHTML = '';
                         data.forEach(item => {
                             const btn = document.createElement('a');
-                            btn.href = item.url;
+                            btn.href = 'javascript:void(0);';
+                            btn.onclick = function() {
+                                searchInput.value = item.sku;
+                                performSearch();
+                                dropdown.classList.add('d-none');
+                                dropdown.classList.remove('show');
+                            };
                             btn.className = 'dropdown-item p-3 border-bottom d-flex justify-content-between align-items-center';
                             btn.innerHTML = `
                                 <div>
