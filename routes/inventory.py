@@ -239,8 +239,15 @@ def nuevo():
         # Si hay variantes o es combo/preparado, el stock base es 0
         stock_base = 0.0 if (v_nombres or tipo_prod in ['combo', 'preparado']) else float(request.form.get('cantidad_stock', 0.0) or 0.0)
 
+        sku_ingresado = request.form.get('sku').strip()
+        if sku_ingresado:
+            existente = Product.query.filter_by(sku=sku_ingresado).first()
+            if existente:
+                flash(f'El SKU "{sku_ingresado}" ya está registrado para el producto "{existente.nombre}". Por favor, utilice un código diferente.', 'warning')
+                return redirect(url_for('inventory_bp.nuevo'))
+
         nuevo_prod = Product(
-            sku=request.form.get('sku').strip(),
+            sku=sku_ingresado,
             nombre=request.form.get('nombre').strip(),
             tipo_producto=tipo_prod,
             categoria_id=int(cat_id) if cat_id else None,
@@ -519,7 +526,15 @@ def editar_producto(id):
         cat_id = request.form.get('categoria_id')
         if tipo_prod == 'combo':
             cat_id = asegurar_categoria_combos().id
-        producto.sku = request.form.get('sku').strip()
+            
+        nuevo_sku = request.form.get('sku').strip()
+        if nuevo_sku and nuevo_sku != producto.sku:
+            existente = Product.query.filter_by(sku=nuevo_sku).first()
+            if existente:
+                flash(f'El SKU "{nuevo_sku}" ya está registrado para el producto "{existente.nombre}". Por favor, utilice un código diferente.', 'warning')
+                return redirect(url_for('inventory_bp.editar_producto', id=id))
+                
+        producto.sku = nuevo_sku
         producto.nombre = request.form.get('nombre').strip()
         producto.tipo_producto = tipo_prod
         producto.categoria_id = int(cat_id) if cat_id else None
