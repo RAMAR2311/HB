@@ -73,7 +73,11 @@
     </div>
     <div class="col-6 col-lg-3">
         <a href="{% if filtro_alerta == '1' %}{{ url_for('inventory_bp.index') }}{% else %}{{ url_for('inventory_bp.index', alerta='1') }}{% endif %}" class="text-decoration-none d-block h-100">
-            <div class="card card-custom p-3 border-0 shadow-sm bg-white h-100 position-relative overflow-hidden" style="cursor: pointer; {% if filtro_alerta == '1' %}outline: 3px solid #dc3545; box-shadow: 0 0 10px rgba(220,53,69,0.3);{% endif %}">
+        {% if filtro_alerta == '1' %}
+            <div class="card card-custom p-3 border-0 shadow-sm bg-white h-100 position-relative overflow-hidden" style="cursor: pointer; outline: 3px solid #dc3545; box-shadow: 0 0 10px rgba(220,53,69,0.3);">
+        {% else %}
+            <div class="card card-custom p-3 border-0 shadow-sm bg-white h-100 position-relative overflow-hidden" style="cursor: pointer;">
+        {% endif %}
                 <div class="d-flex align-items-center">
                     <div class="rounded-circle p-3 {% if total_alertas_global > 0 %}bg-danger text-white{% else %}bg-light text-muted{% endif %} me-3 flex-shrink-0" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
                         <i class="fa-solid fa-triangle-exclamation fs-5"></i>

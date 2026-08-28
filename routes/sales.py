@@ -123,6 +123,7 @@ def procesar_venta():
         table_id = data.get('table_id')
         mesero_id = data.get('mesero_id')
         porcentaje_propina = Decimal(str(data.get('porcentaje_propina', '0.00')))
+        monto_propina_fijo = data.get('monto_propina_fijo')
         monto_descuento = Decimal(str(data.get('monto_descuento', '0.00')))
         aplica_recargo_datafono = bool(data.get('aplica_recargo_datafono', False))
         estado_cuenta = data.get('estado_cuenta', 'pagada')
@@ -317,7 +318,10 @@ def procesar_venta():
                     monto_cortesia += (precio_venta_final * cantidad_vendida)
 
         # Cálculos de Propina, Recargo Datafono y Total Final
-        monto_propina = Decimal(str(round(float(subtotal) * (float(porcentaje_propina) / 100.0), 2)))
+        if monto_propina_fijo is not None and str(monto_propina_fijo).strip() != '':
+            monto_propina = Decimal(str(monto_propina_fijo))
+        else:
+            monto_propina = Decimal(str(round(float(subtotal) * (float(porcentaje_propina) / 100.0), 2)))
         
         # Calcular recargo de Datafono (5%) si aplica
         monto_datafono_total = Decimal('0.00')

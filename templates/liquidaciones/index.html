@@ -409,10 +409,10 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onclick="abrirModalEditarBeneficiario({{ b.id }}, '{{ b.nombre }}', '{{ b.rol_cargo or '' }}')">
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" onclick="abrirModalEditarBeneficiario(`{{ b.id }}`, `{{ b.nombre }}`, `{{ b.rol_cargo or '' }}`)">
                                         <i class="fa-solid fa-pen-to-square"></i> Editar
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold ms-1" onclick="eliminarBeneficiario({{ b.id }}, '{{ b.nombre }}')">
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold ms-1" onclick="eliminarBeneficiario(`{{ b.id }}`, `{{ b.nombre }}`)">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </td>

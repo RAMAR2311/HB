@@ -106,7 +106,11 @@
         <!-- 4. Alertas de Stock -->
         <div class="col-12 col-sm-6 col-xl-3">
             <a href="{{ url_for('inventory_bp.index', alerta='1') }}" class="text-decoration-none d-block h-100">
-                <div class="card p-3 h-100 bg-white" style="border: 2px solid {% if productos_bajo_stock > 0 %}var(--color-primary){% else %}var(--color-text-main){% endif %}; box-shadow: 3px 3px 0px {% if productos_bajo_stock > 0 %}var(--color-primary){% else %}var(--color-text-main){% endif %}; border-left: 6px solid var(--color-primary) !important; border-radius: 14px; cursor: pointer;">
+                {% if productos_bajo_stock > 0 %}
+                <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-primary); box-shadow: 3px 3px 0px var(--color-primary); border-left: 6px solid var(--color-primary) !important; border-radius: 14px; cursor: pointer;">
+                {% else %}
+                <div class="card p-3 h-100 bg-white" style="border: 2px solid var(--color-text-main); box-shadow: 3px 3px 0px var(--color-text-main); border-left: 6px solid var(--color-primary) !important; border-radius: 14px; cursor: pointer;">
+                {% endif %}
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <small class="text-muted fw-bold font-heading" style="font-size: 0.72rem;">ALERTAS DE STOCK MÍNIMO</small>
                         <i class="fa-solid fa-triangle-exclamation text-danger"></i>

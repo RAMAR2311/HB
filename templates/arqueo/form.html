@@ -385,7 +385,7 @@
 
 <script>
     // Variables del Sistema inyectadas de forma segura
-    const esAdmin = {{ 'true' if current_user.rol == 'admin' else 'false' }};
+    const esAdmin = "{{ 'true' if current_user.rol == 'admin' else 'false' }}" === "true";
     const totalEfectivoSistema = parseFloat("{{ total_efectivo|float }}") || 0;
     const gastosSistema = parseFloat("{{ gastos_automaticos|float }}") || 0;
 

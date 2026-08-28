@@ -112,17 +112,17 @@
     {% for m in mesas %}
     <div class="col-6 col-sm-4 col-md-3 col-lg-2">
         <div class="table-pod p-3 text-center position-relative estado-{{ m.estado }}"
-             onclick="seleccionarMesa({{ m.id }}, '{{ m.nombre }}', '{{ m.estado }}')">
+             onclick="seleccionarMesa('{{ m.id }}', '{{ m.nombre }}', '{{ m.estado }}')">
             
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <span class="badge {% if m.estado == 'ocupada' %}bg-warning text-dark border border-dark{% elif m.estado == 'unida' %}bg-primary text-white{% else %}bg-success text-white{% endif %} rounded-pill px-3 py-1 fw-bold font-mono" style="font-size: 0.68rem; letter-spacing: 0.05em;">
                     {{ m.estado|upper }}
                 </span>
                 <div class="d-flex align-items-center gap-1">
-                    <button type="button" class="btn btn-sm p-1 text-secondary border-0" onclick="event.stopPropagation(); abrirModalEditarMesa({{ m.id }}, '{{ m.nombre }}', {{ m.capacidad }})" title="Editar Mesa">
+                    <button type="button" class="btn btn-sm p-1 text-secondary border-0" onclick="event.stopPropagation(); abrirModalEditarMesa('{{ m.id }}', '{{ m.nombre }}', '{{ m.capacidad }}')" title="Editar Mesa">
                         <i class="fa-solid fa-pen-to-square"></i>
                     </button>
-                    <button type="button" class="btn btn-sm p-1 text-danger border-0" onclick="event.stopPropagation(); eliminarMesa({{ m.id }}, '{{ m.nombre }}')" title="Eliminar Mesa">
+                    <button type="button" class="btn btn-sm p-1 text-danger border-0" onclick="event.stopPropagation(); eliminarMesa('{{ m.id }}', '{{ m.nombre }}')" title="Eliminar Mesa">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>

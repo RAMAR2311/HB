@@ -287,11 +287,11 @@
                         <!-- Acciones -->
                         <td class="text-center d-print-none">
                             <div class="d-flex align-items-center justify-content-center gap-1">
-                                <a href="{{ url_for('sales_bp.imprimir_ticket', sale_id=venta.id) }}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold font-heading" title="Ver e imprimir ticket" style="border: 1.5px solid var(--color-text-main);">
+                                <a href="{{ url_for("sales_bp.imprimir_ticket", sale_id=venta.id) }}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold font-heading" title="Ver e imprimir ticket" style="border: 1.5px solid var(--color-text-main);">
                                     <i class="fa-solid fa-receipt me-1 text-primary"></i> Recibo
                                 </a>
-                                {% if current_user.rol == 'admin' %}
-                                <form action="{{ url_for('sales_bp.eliminar_venta', sale_id=venta.id) }}" method="POST" onsubmit="return confirm('ATENCIÓN: ¿Está seguro de anular el ticket #{{ '%05d' % venta.id }}? Esta acción retornará el stock.');" class="d-inline m-0">
+                                {% if current_user.rol == "admin" %}
+                                <form action="{{ url_for('sales_bp.eliminar_venta', sale_id=venta.id) }}" method="POST" onsubmit="return confirm(`ATENCIÓN: ¿Está seguro de anular el ticket #{{ '%05d' % venta.id }}? Esta acción retornará el stock.`);" class="d-inline m-0">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 fw-bold" title="Anular venta">
                                         <i class="fa-solid fa-trash"></i>

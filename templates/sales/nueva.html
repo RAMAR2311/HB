@@ -416,8 +416,12 @@
                                     <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0 fw-bold" onclick="setPropinaRapida(10)">10%</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 fw-bold" onclick="setPropinaRapida(15)">15%</button>
                                     <div class="input-group input-group-sm ms-1" style="width: 80px;">
-                                        <input type="number" id="inputPorcentajePropina" class="form-control text-center fw-bold bg-white border" value="10" min="0" max="100" oninput="calcularTotalesPOS()">
+                                        <input type="number" id="inputPorcentajePropina" class="form-control text-center fw-bold bg-white border" value="10" min="0" max="100" oninput="document.getElementById('inputMontoPropinaFijo').value=''; calcularTotalesPOS()">
                                         <span class="input-group-text bg-white border">%</span>
+                                    </div>
+                                    <div class="input-group input-group-sm ms-1" style="width: 110px;">
+                                        <span class="input-group-text bg-white border text-success">$</span>
+                                        <input type="number" id="inputMontoPropinaFijo" class="form-control text-center fw-bold bg-white border" placeholder="Fijo" min="0" oninput="calcularTotalesPOS()">
                                     </div>
                                 </div>
                             </div>
@@ -635,9 +639,15 @@
                                         <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 fw-bold" onclick="setPropinaSplitItems(10)">10%</button>
                                         <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 fw-bold" onclick="setPropinaSplitItems(15)">15%</button>
                                     </div>
-                                    <div class="input-group input-group-sm" style="max-width: 140px;">
-                                        <input type="number" id="inputSplitItemsPropina" class="form-control bg-white border fw-bold text-center" value="10" min="0" max="100" oninput="actualizarMontoSplitItems()">
-                                        <span class="input-group-text bg-white border fw-bold">%</span>
+                                    <div class="d-flex gap-1" style="max-width: 200px;">
+                                        <div class="input-group input-group-sm w-50">
+                                            <input type="number" id="inputSplitItemsPropina" class="form-control bg-white border fw-bold text-center px-1" value="10" min="0" max="100" oninput="document.getElementById('inputSplitItemsPropinaFijo').value=''; actualizarMontoSplitItems()">
+                                            <span class="input-group-text bg-white border px-1 fw-bold">%</span>
+                                        </div>
+                                        <div class="input-group input-group-sm w-50">
+                                            <span class="input-group-text bg-white border text-success px-1">$</span>
+                                            <input type="number" id="inputSplitItemsPropinaFijo" class="form-control bg-white border fw-bold text-center px-1" placeholder="Fijo" min="0" oninput="actualizarMontoSplitItems()">
+                                        </div>
                                     </div>
                                 </div>
 
@@ -943,8 +953,14 @@
 
     function calcularTotalesPOS() {
         const subtotal = obtenerSubtotal();
-        const pctPropina = parseFloat(document.getElementById('inputPorcentajePropina').value) || 0;
-        const montoPropina = subtotal * (pctPropina / 100);
+        const inputFijo = document.getElementById('inputMontoPropinaFijo');
+        let montoPropina = 0;
+        if (inputFijo && inputFijo.value !== '') {
+            montoPropina = parseFloat(inputFijo.value) || 0;
+        } else {
+            const pctPropina = parseFloat(document.getElementById('inputPorcentajePropina').value) || 0;
+            montoPropina = subtotal * (pctPropina / 100);
+        }
         const montoDescuento = parseFloat(document.getElementById('inputMontoDescuento').value) || 0;
         const aplicaRecargo = document.getElementById('chkRecargoDatafono').checked;
         const esMixto = document.getElementById('chkPagoMixto') && document.getElementById('chkPagoMixto').checked;
@@ -1191,6 +1207,8 @@
 
     function setPropinaRapida(pct) {
         document.getElementById('inputPorcentajePropina').value = pct;
+        const inputFijo = document.getElementById('inputMontoPropinaFijo');
+        if (inputFijo) inputFijo.value = '';
         calcularTotalesPOS();
     }
 
@@ -1325,6 +1343,8 @@
 
         const meseroId = document.getElementById('selectMeseroPOS').value;
         const pctPropina = parseFloat(document.getElementById('inputPorcentajePropina').value) || 0;
+        const inputFijoValue = document.getElementById('inputMontoPropinaFijo')?.value;
+        const montoPropinaFijo = inputFijoValue ? parseFloat(inputFijoValue) : null;
         const montoDescuento = parseFloat(document.getElementById('inputMontoDescuento').value) || 0;
         const aplicaRecargo = document.getElementById('chkRecargoDatafono').checked;
 
@@ -1332,6 +1352,7 @@
             table_id: tableId || null,
             mesero_id: meseroId || null,
             porcentaje_propina: pctPropina,
+            monto_propina_fijo: montoPropinaFijo,
             monto_descuento: montoDescuento,
             aplica_recargo_datafono: aplicaRecargo,
             estado_cuenta: estadoCuenta,
@@ -1410,6 +1431,8 @@
         if (!tableId) return null;
 
         const pctPropina = parseFloat(document.getElementById('inputPorcentajePropina').value) || 0;
+        const inputFijoValue = document.getElementById('inputMontoPropinaFijo')?.value;
+        const montoPropinaFijo = inputFijoValue ? parseFloat(inputFijoValue) : null;
         const montoDescuento = parseFloat(document.getElementById('inputMontoDescuento').value) || 0;
         const aplicaRecargo = document.getElementById('chkRecargoDatafono').checked;
         const meseroId = document.getElementById('selectMeseroPOS').value;
@@ -1418,6 +1441,7 @@
             table_id: tableId,
             mesero_id: meseroId || null,
             porcentaje_propina: pctPropina,
+            monto_propina_fijo: montoPropinaFijo,
             monto_descuento: montoDescuento,
             aplica_recargo_datafono: aplicaRecargo,
             estado_cuenta: 'abierta',
@@ -1710,6 +1734,8 @@
     function setPropinaSplitItems(pct) {
         const input = document.getElementById('inputSplitItemsPropina');
         if (input) input.value = pct;
+        const inputFijo = document.getElementById('inputSplitItemsPropinaFijo');
+        if (inputFijo) inputFijo.value = '';
         actualizarMontoSplitItems();
     }
 
@@ -1735,8 +1761,14 @@
             }
         });
 
-        const tipPct = parseFloat(document.getElementById('inputSplitItemsPropina')?.value || 0);
-        const montoPropina = (subtotalItems * tipPct) / 100;
+        const inputFijo = document.getElementById('inputSplitItemsPropinaFijo');
+        let montoPropina = 0;
+        if (inputFijo && inputFijo.value !== '') {
+            montoPropina = parseFloat(inputFijo.value) || 0;
+        } else {
+            const tipPct = parseFloat(document.getElementById('inputSplitItemsPropina')?.value || 0);
+            montoPropina = (subtotalItems * tipPct) / 100;
+        }
         
         const metodoPago = document.getElementById('selectMetodoPagoSplitItems')?.value || 'efectivo';
         const aplicaRecargoDatafono = (metodoPago === 'datafono' && document.getElementById('chkRecargoDatafonoSplitItems')?.checked);
