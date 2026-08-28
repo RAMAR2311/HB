@@ -204,7 +204,7 @@
 
     <div class="row g-4">
         <!-- Panel Izquierdo: Catálogo de Productos -->
-        <div class="col-lg-7 col-xl-8">
+        <div class="col-lg-7 col-xl-8" id="seccionProductosPOS">
             <div class="pos-card p-4">
                 <!-- Cabecera de Catálogo y Buscador en Tiempo Real -->
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
@@ -323,7 +323,7 @@
         </div>
 
         <!-- Panel Derecho: Carrito y Cobro -->
-        <div class="col-lg-5 col-xl-4">
+        <div class="col-lg-5 col-xl-4" id="seccionCarritoPOS">
             <div class="pos-card p-4 position-sticky" style="top: 90px;">
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                     <h5 class="fw-extrabold text-dark m-0"><i class="fa-solid fa-cart-shopping me-2 text-warning"></i>Orden en Curso</h5>
@@ -357,6 +357,10 @@
                     
                     <button type="button" id="btnCobrarCuentaPOS" class="btn btn-hb-primary btn-lg py-3 shadow-sm" onclick="abrirModalCobrarCuenta()">
                         <i class="fa-solid fa-cash-register me-2 text-white"></i> <span id="txtBtnCobrar">2. Cobrar & Cerrar Cuenta</span>
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-dark btn-lg py-2 shadow-sm d-lg-none mt-2 fw-bold" onclick="document.getElementById('seccionProductosPOS').scrollIntoView({behavior: 'smooth', block: 'start'})">
+                        <i class="fa-solid fa-arrow-up me-2"></i> Seguir agregando productos
                     </button>
                 </div>
             </div>
@@ -841,6 +845,14 @@
             });
         }
         renderizarCarrito();
+        
+        // Auto-scroll al carrito en vistas móviles (PWA)
+        if (window.innerWidth < 992) {
+            const seccion = document.getElementById('seccionCarritoPOS');
+            if (seccion) {
+                seccion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
     }
 
     async function toggleCortesia(index) {
