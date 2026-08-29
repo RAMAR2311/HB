@@ -211,8 +211,9 @@
                             <th width="10%">Ticket #</th>
                             <th width="12%">Hora</th>
                             <th width="15%">Método Pago</th>
-                            <th width="45%">Productos y Cantidades</th>
-                            <th width="18%" class="text-end">Total Ticket</th>
+                            <th width="35%">Productos y Cantidades</th>
+                            <th width="15%" class="text-end">Precio Sistema</th>
+                            <th width="13%" class="text-end">Total Ticket</th>
                         </tr>
                     </thead>
                     <tbody style="font-size: 0.9rem;" class="font-body">
@@ -258,11 +259,23 @@
                                     {% endfor %}
                                 </ul>
                             </td>
+                            <td class="text-end">
+                                {% if current_user.rol == 'admin' %}
+                                    {% set sys_total = namespace(value=0) %}
+                                    {% for d in v.detalles %}
+                                        {% set p_precio = d.variante.precio_sugerido if d.variante else (d.producto.precio_sugerido if d.producto else d.precio_venta_final) %}
+                                        {% set sys_total.value = sys_total.value + (d.cantidad_vendida * p_precio) %}
+                                    {% endfor %}
+                                    <span class="font-mono text-muted fs-6">
+                                        ${{ (sys_total.value)|cop }}
+                                    </span>
+                                {% endif %}
+                            </td>
                             <td class="text-end fw-extrabold text-dark font-mono fs-6">${{ (v.monto_total)|cop }}</td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted p-5">
+                            <td colspan="6" class="text-center text-muted p-5">
                                 <i class="fa-solid fa-box-open fs-2 mb-3 opacity-25"></i>
                                 <h6 class="fw-bold m-0 font-heading">No se registraron ventas en este turno.</h6>
                             </td>
@@ -272,7 +285,7 @@
                     {% if ventas_periodo %}
                     <tfoot style="background-color: var(--color-bg-main); border-top: 2px solid var(--color-text-main);">
                         <tr>
-                            <td colspan="4" class="text-end fw-extrabold font-heading py-3 text-dark">TOTAL VENDIDO EN TURNO:</td>
+                            <td colspan="5" class="text-end fw-extrabold font-heading py-3 text-dark">TOTAL VENDIDO EN TURNO:</td>
                             <td class="text-end font-mono fw-extrabold fs-5 py-3 text-dark">
                                 ${{ (ventas_periodo|map(attribute='monto_total')|sum)|cop }}
                             </td>
