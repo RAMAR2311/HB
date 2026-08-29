@@ -120,27 +120,31 @@
                                 <span class="text-muted small">Calcula automáticamente el stock en shots y costo unitario por shot para coctelería</span>
                             </div>
                             <div class="row g-2 align-items-end">
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label small fw-semibold text-muted mb-1">Nº de Botellas</label>
-                                    <input type="number" id="calcNumBotellas" class="form-control form-control-sm bg-white" placeholder="Ej: 5" value="1" min="1">
+                                <div class="col-md-2 col-4">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Nº Botellas</label>
+                                    <input type="number" id="calcNumBotellas" class="form-control form-control-sm bg-white" placeholder="Ej: 5" value="1" min="0" step="any">
                                 </div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label small fw-semibold text-muted mb-1">Tamaño Botella (ml)</label>
+                                <div class="col-md-3 col-4">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Tamaño Botella</label>
                                     <select id="calcTamanoBotella" class="form-select form-select-sm bg-white">
                                         <option value="750">750 ml (16 Shots)</option>
                                         <option value="700">700 ml (15 Shots)</option>
-                                        <option value="1000">1000 ml / 1 Litro (21 Shots)</option>
+                                        <option value="1000">1000 ml / 1 L (21 Shots)</option>
                                         <option value="375">375 ml / Media (8 Shots)</option>
                                         <option value="1750">1750 ml / Galón (37 Shots)</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label small fw-semibold text-muted mb-1">Costo x Botella ($)</label>
+                                <div class="col-md-2 col-4">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Total Shots</label>
+                                    <input type="number" id="calcTotalShots" class="form-control form-control-sm bg-white border-warning" placeholder="Ej: 16" value="16" min="0" step="any">
+                                </div>
+                                <div class="col-md-2 col-6">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Costo Botella</label>
                                     <input type="number" id="calcCostoBotella" class="form-control form-control-sm bg-white" placeholder="Ej: 45000">
                                 </div>
                                 <div class="col-md-3 col-6">
                                     <button type="button" id="btnAplicarShots" class="btn btn-sm btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm">
-                                        <i class="fa-solid fa-bolt me-1"></i> Aplicar Stock y Costo
+                                        <i class="fa-solid fa-bolt me-1"></i> Aplicar
                                     </button>
                                 </div>
                             </div>
@@ -488,9 +492,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Calculadora de Botellas a Shots
+    // Calculadora de Botellas a Shots bidireccional
     const calcNumBotellas = document.getElementById('calcNumBotellas');
     const calcTamanoBotella = document.getElementById('calcTamanoBotella');
+    const calcTotalShots = document.getElementById('calcTotalShots');
     const calcCostoBotella = document.getElementById('calcCostoBotella');
     const btnAplicarShots = document.getElementById('btnAplicarShots');
     const calcResultadoTexto = document.getElementById('calcResultadoTexto');
@@ -506,17 +511,37 @@ document.addEventListener('DOMContentLoaded', function() {
         return ml / 46.875;
     }
 
-    function actualizarCalculoShots() {
-        if (!calcNumBotellas || !calcTamanoBotella || !calcResultadoTexto) return;
-        const botellas = parseFloat(calcNumBotellas.value) || 0;
+    let lastEditedInput = 'botellas';
+
+    function actualizarCalculoShots(e) {
+        if (!calcNumBotellas || !calcTamanoBotella || !calcTotalShots || !calcResultadoTexto) return;
+        
+        if (e && e.target === calcNumBotellas) {
+            lastEditedInput = 'botellas';
+        } else if (e && e.target === calcTotalShots) {
+            lastEditedInput = 'shots';
+        }
+
         const ml = parseFloat(calcTamanoBotella.value) || 750;
         const costoBotella = parseFloat(calcCostoBotella ? calcCostoBotella.value : 0) || 0;
-
         const shotsPorBotella = getShots(ml);
-        const totalShots = botellas * shotsPorBotella;
+
+        let botellas = 0;
+        let totalShots = 0;
+
+        if (lastEditedInput === 'botellas') {
+            botellas = parseFloat(calcNumBotellas.value) || 0;
+            totalShots = botellas * shotsPorBotella;
+            calcTotalShots.value = totalShots > 0 ? parseFloat(totalShots.toFixed(2)) : '';
+        } else {
+            totalShots = parseFloat(calcTotalShots.value) || 0;
+            botellas = totalShots / shotsPorBotella;
+            calcNumBotellas.value = botellas > 0 ? parseFloat(botellas.toFixed(2)) : '';
+        }
+
         const costoPorShot = totalShots > 0 && costoBotella > 0 ? (costoBotella * botellas) / totalShots : 0;
 
-        let txt = `👉 <strong>${botellas} Botella(s)</strong> de ${ml}ml = <span class="badge bg-warning text-dark border fw-bold fs-6">${totalShots.toFixed(2)} Shots</span> totales`;
+        let txt = `👉 <strong>${parseFloat(botellas.toFixed(2))} Botella(s)</strong> de ${ml}ml = <span class="badge bg-warning text-dark border fw-bold fs-6">${parseFloat(totalShots.toFixed(2))} Shots</span> totales`;
         if (costoPorShot > 0) {
             txt += ` | Costo: <strong class="text-success">$${Math.round(costoPorShot).toLocaleString('es-CO')} / Shot</strong>`;
         }
@@ -524,17 +549,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (calcNumBotellas) calcNumBotellas.addEventListener('input', actualizarCalculoShots);
+    if (calcTotalShots) calcTotalShots.addEventListener('input', actualizarCalculoShots);
     if (calcTamanoBotella) calcTamanoBotella.addEventListener('change', actualizarCalculoShots);
     if (calcCostoBotella) calcCostoBotella.addEventListener('input', actualizarCalculoShots);
 
     if (btnAplicarShots) {
         btnAplicarShots.addEventListener('click', function() {
             const botellas = parseFloat(calcNumBotellas.value) || 0;
-            const ml = parseFloat(calcTamanoBotella.value) || 750;
+            const totalShots = parseFloat(calcTotalShots.value) || 0;
             const costoBotella = parseFloat(calcCostoBotella ? calcCostoBotella.value : 0) || 0;
-
-            const shotsPorBotella = getShots(ml);
-            const totalShots = botellas * shotsPorBotella;
             const costoPorShot = totalShots > 0 && costoBotella > 0 ? (costoBotella * botellas) / totalShots : 0;
 
             if (inputStock) {
