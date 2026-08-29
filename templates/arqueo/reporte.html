@@ -181,6 +181,25 @@
             </div>
             {% endif %}
 
+            <!-- RESUMEN TOTAL DE PRODUCTOS VENDIDOS -->
+            <h5 class="fw-extrabold text-dark mb-3 mt-4 font-heading border-bottom pb-2">
+                <i class="fa-solid fa-boxes-stacked me-2" style="color: var(--color-secondary);"></i> Resumen Total de Productos Vendidos
+            </h5>
+            <div class="card p-3 mb-5 border-0 shadow-sm" style="background-color: var(--color-bg-main); border-radius: 12px;">
+                {% if resumen_productos %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for producto, cantidad in resumen_productos.items() %}
+                    <div class="badge bg-white text-dark border p-2 font-heading fs-6 d-flex align-items-center gap-2 shadow-sm">
+                        <span class="bg-secondary text-white rounded-circle d-inline-flex justify-content-center align-items-center font-mono" style="width: 24px; height: 24px; font-size: 0.75rem;">{{ cantidad }}</span>
+                        {{ producto }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small m-0 text-center py-3">No hay productos vendidos registrados en este turno.</p>
+                {% endif %}
+            </div>
+
             <!-- TABLA DE VENTAS DETALLADAS -->
             <h5 class="fw-extrabold text-dark mb-3 font-heading border-bottom pb-2">
                 <i class="fa-solid fa-list-check me-2" style="color: var(--color-primary);"></i> Detalle de Ventas y Productos Involucrados

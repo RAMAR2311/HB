@@ -145,6 +145,15 @@ def nuevo():
             db.session.rollback()
             flash(f'❌ Error al guardar el arqueo de caja: {str(e)}', 'danger')
 
+    resumen_productos = {}
+    for v in ventas_del_dia:
+        for d in v.detalles:
+            nombre = d.producto.nombre if d.producto else d.nombre
+            if nombre not in resumen_productos:
+                resumen_productos[nombre] = 0
+            resumen_productos[nombre] += d.cantidad_vendida
+    resumen_productos = dict(sorted(resumen_productos.items(), key=lambda item: item[1], reverse=True))
+
     return render_template(
         'arqueo/form.html',
         turno=turno_abierto,
@@ -160,7 +169,8 @@ def nuevo():
         arqueo_existente=arqueo_existente,
         gastos_automaticos=gastos_automaticos,
         gastos_externos=gastos_externos,
-        base_sugerida=base_sugerida
+        base_sugerida=base_sugerida,
+        resumen_productos=resumen_productos
     )
 
 @arqueo_bp.route('/reporte', methods=['GET'])
@@ -204,6 +214,15 @@ def reporte():
 
     fecha_generacion = obtener_hora_bogota().strftime('%d/%m/%Y %I:%M %p')
 
+    resumen_productos = {}
+    for v in ventas_periodo:
+        for d in v.detalles:
+            nombre = d.producto.nombre if d.producto else d.nombre
+            if nombre not in resumen_productos:
+                resumen_productos[nombre] = 0
+            resumen_productos[nombre] += d.cantidad_vendida
+    resumen_productos = dict(sorted(resumen_productos.items(), key=lambda item: item[1], reverse=True))
+
     return render_template(
         'arqueo/reporte.html',
         lista_arqueos=lista_arqueos,
@@ -214,7 +233,8 @@ def reporte():
         digital_esperado=digital_esperado,
         diferencia_efectivo=diferencia_efectivo,
         diferencia_digital=diferencia_digital,
-        fecha_generacion=fecha_generacion
+        fecha_generacion=fecha_generacion,
+        resumen_productos=resumen_productos
     )
 
 @arqueo_bp.route('/anular/<int:id>', methods=['POST'])
