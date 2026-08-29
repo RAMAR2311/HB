@@ -28,6 +28,9 @@
                 <button onclick="window.print()" class="btn btn-hb-secondary rounded-pill fw-bold px-4">
                     <i class="fa-solid fa-print me-1"></i> Imprimir
                 </button>
+                <button onclick="enviarWhatsAppPDF()" class="btn btn-success rounded-pill fw-bold px-4" title="Descarga el PDF y abre WhatsApp con el Administrador">
+                    <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
+                </button>
             </div>
         </div>
     </div>
@@ -307,4 +310,37 @@
         </div>
     </div>
 </div>
+
+<!-- html2pdf.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>
+function enviarWhatsAppPDF() {
+    const element = document.querySelector('.printable-document');
+    
+    // Clonar el elemento para remover cosas que no queremos en el PDF (como botones)
+    const clone = element.cloneNode(true);
+    const noPrintElements = clone.querySelectorAll('.d-print-none');
+    noPrintElements.forEach(el => el.remove());
+
+    const opt = {
+      margin:       0.4,
+      filename:     'Reporte_Arqueo_Turno_{{ arqueo.turno_rel.numero_turno }}.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(clone).save().then(function() {
+        // Esperamos 1 segundo para que la descarga inicie bien y luego abrimos WhatsApp
+        setTimeout(() => {
+            const numero = "573115142710";
+            const mensaje = "Hola, aquí te envío el reporte contable adjunto del Turno #{{ arqueo.turno_rel.numero_turno }}.";
+            const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
+        }, 1500);
+    });
+}
+</script>
+
 {% endblock %}
