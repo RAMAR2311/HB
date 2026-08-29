@@ -30,7 +30,12 @@
                 
                 <div class="mb-4">
                     <label class="form-label fw-bold text-dark small font-heading">Contraseña</label>
-                    <input type="password" class="form-control form-control-lg bg-light border py-3" name="password" required placeholder="••••••••">
+                    <div class="input-group">
+                        <input type="password" class="form-control form-control-lg bg-light border py-3" id="inputPassword" name="password" required placeholder="••••••••">
+                        <button class="btn btn-light border" type="button" id="btnTogglePassword" tabindex="-1">
+                            <i class="fa-solid fa-eye text-muted"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="d-grid mt-4">
@@ -41,6 +46,22 @@
             </form>
         </div>
     </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const togglePassword = document.getElementById('btnTogglePassword');
+        const password = document.getElementById('inputPassword');
+        
+        if (togglePassword && password) {
+            togglePassword.addEventListener('click', function (e) {
+                e.preventDefault();
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                this.innerHTML = type === 'password' ? '<i class="fa-solid fa-eye text-muted"></i>' : '<i class="fa-solid fa-eye-slash text-muted"></i>';
+            });
+        }
+    });
+</script>
 
     <!-- Columna Derecha: Brand Card -->
     <div class="col-md-6 col-lg-5 d-none d-md-flex justify-content-center align-items-center text-center">
