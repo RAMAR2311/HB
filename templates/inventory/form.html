@@ -77,7 +77,7 @@
                     <div class="col-md-3 mt-3" id="divStock">
                         <label class="form-label fw-bold text-brand-black">Stock Actual</label>
                         <input type="number" step="any" class="form-control bg-light border-0 fw-bold" name="cantidad_stock" id="inputStock" min="0" value="{{ "%.2f"|format(producto.cantidad_stock|float) if (producto and producto.cantidad_stock and (producto.cantidad_stock|float % 1 != 0)) else (producto.cantidad_stock|int if producto else '0') }}">
-                        <small class="text-muted">Unidades u Onzas (oz) disponibles.</small>
+                        <small class="text-muted">Unidades o Shots disponibles.</small>
                     </div>
                     
                     <div class="col-md-3 mt-3" id="divCosto">
@@ -86,7 +86,7 @@
                             <span class="input-group-text bg-white border-0">$</span>
                             <input type="number" step="any" class="form-control bg-light border-0" name="precio_costo" id="inputCosto" value="{{ "%.2f"|format(producto.precio_costo|float) if (producto and producto.precio_costo and (producto.precio_costo|float % 1 != 0)) else ("%.0f"|format(producto.precio_costo|float) if producto else '0') }}">
                         </div>
-                        <small class="text-muted">Costo unitario o por onza.</small>
+                        <small class="text-muted">Costo unitario o por shot.</small>
                     </div>
                     
                     <div class="col-md-3 mt-3" id="divPrecio">
@@ -109,15 +109,15 @@
                         <small class="text-muted">Comisión mesero por unidad.</small>
                     </div>
 
-                    <!-- Asistente / Calculadora de Botellas a Onzas (1 oz = 30 ml) para Insumos -->
-                    <div class="col-12 mt-3 d-none" id="divConversorOnzas">
+                    <!-- Asistente / Calculadora de Botellas a Shots para Insumos -->
+                    <div class="col-12 mt-3 d-none" id="divConversorShots">
                         <div class="p-3 rounded-4 bg-light border border-warning-subtle shadow-sm" style="border-left: 5px solid #f59e0b !important;">
                             <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                                 <h6 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
                                     <i class="fa-solid fa-calculator text-warning"></i>
-                                    Calculadora de Botellas a Onzas <span class="badge bg-warning text-dark">1 oz = 30 ml</span>
+                                    Calculadora de Botellas a Shots <span class="badge bg-warning text-dark">1 Shot ≈ 47 ml</span>
                                 </h6>
-                                <span class="text-muted small">Calcula automáticamente el stock en onzas y costo unitario por onza para coctelería</span>
+                                <span class="text-muted small">Calcula automáticamente el stock en shots y costo unitario por shot para coctelería</span>
                             </div>
                             <div class="row g-2 align-items-end">
                                 <div class="col-md-3 col-6">
@@ -127,10 +127,11 @@
                                 <div class="col-md-3 col-6">
                                     <label class="form-label small fw-semibold text-muted mb-1">Tamaño Botella (ml)</label>
                                     <select id="calcTamanoBotella" class="form-select form-select-sm bg-white">
-                                        <option value="750">750 ml (25.0 oz)</option>
-                                        <option value="1000">1000 ml / 1 Litro (33.33 oz)</option>
-                                        <option value="375">375 ml / Media (12.5 oz)</option>
-                                        <option value="1750">1750 ml / Galón (58.33 oz)</option>
+                                        <option value="750">750 ml (16 Shots)</option>
+                                        <option value="700">700 ml (15 Shots)</option>
+                                        <option value="1000">1000 ml / 1 Litro (21 Shots)</option>
+                                        <option value="375">375 ml / Media (8 Shots)</option>
+                                        <option value="1750">1750 ml / Galón (37 Shots)</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3 col-6">
@@ -138,13 +139,13 @@
                                     <input type="number" id="calcCostoBotella" class="form-control form-control-sm bg-white" placeholder="Ej: 45000">
                                 </div>
                                 <div class="col-md-3 col-6">
-                                    <button type="button" id="btnAplicarOnzas" class="btn btn-sm btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm">
+                                    <button type="button" id="btnAplicarShots" class="btn btn-sm btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm">
                                         <i class="fa-solid fa-bolt me-1"></i> Aplicar Stock y Costo
                                     </button>
                                 </div>
                             </div>
                             <div class="mt-2 text-muted small" id="calcResultadoTexto">
-                                👉 <strong>1 Botella</strong> de 750ml = <span class="badge bg-white text-dark border fw-bold">25.00 oz</span> totales.
+                                👉 <strong>1 Botella</strong> de 750ml = <span class="badge bg-white text-dark border fw-bold">16 Shots</span> totales.
                             </div>
                         </div>
                     </div>
@@ -440,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const divPrecio = document.getElementById('divPrecio');
     const divRecetas = document.getElementById('divRecetas');
     
-    const divConversorOnzas = document.getElementById('divConversorOnzas');
+    const divConversorShots = document.getElementById('divConversorShots');
     
     const btnAddReceta = document.getElementById('btnAddReceta');
     const recetasContainer = document.getElementById('recetasContainer');
@@ -453,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
             divCosto.classList.add('d-none');
             divPrecio.classList.remove('d-none');
             divRecetas.classList.remove('d-none');
-            if (divConversorOnzas) divConversorOnzas.classList.add('d-none');
+            if (divConversorShots) divConversorShots.classList.add('d-none');
             
             // Habilitar recetas
             if (recetasContainer) {
@@ -468,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
             divCosto.classList.remove('d-none');
             divPrecio.classList.add('d-none');
             divRecetas.classList.add('d-none');
-            if (divConversorOnzas) divConversorOnzas.classList.remove('d-none');
+            if (divConversorShots) divConversorShots.classList.remove('d-none');
 
             if (recetasContainer) {
                 recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
@@ -479,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function() {
             divCosto.classList.remove('d-none');
             divPrecio.classList.remove('d-none');
             divRecetas.classList.add('d-none');
-            if (divConversorOnzas) divConversorOnzas.classList.add('d-none');
+            if (divConversorShots) divConversorShots.classList.add('d-none');
 
             if (recetasContainer) {
                 recetasContainer.querySelectorAll('input, select').forEach(el => el.disabled = true);
@@ -487,53 +488,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Calculadora de Botellas a Onzas (1 oz = 30 ml)
+    // Calculadora de Botellas a Shots
     const calcNumBotellas = document.getElementById('calcNumBotellas');
     const calcTamanoBotella = document.getElementById('calcTamanoBotella');
     const calcCostoBotella = document.getElementById('calcCostoBotella');
-    const btnAplicarOnzas = document.getElementById('btnAplicarOnzas');
+    const btnAplicarShots = document.getElementById('btnAplicarShots');
     const calcResultadoTexto = document.getElementById('calcResultadoTexto');
     const inputStock = document.getElementById('inputStock');
     const inputCosto = document.getElementById('inputCosto');
 
-    function actualizarCalculoOnzas() {
+    function getShots(ml) {
+        if (ml == 750) return 16;
+        if (ml == 700) return 15;
+        if (ml == 1000) return 21;
+        if (ml == 375) return 8;
+        if (ml == 1750) return 37;
+        return ml / 46.875;
+    }
+
+    function actualizarCalculoShots() {
         if (!calcNumBotellas || !calcTamanoBotella || !calcResultadoTexto) return;
         const botellas = parseFloat(calcNumBotellas.value) || 0;
         const ml = parseFloat(calcTamanoBotella.value) || 750;
         const costoBotella = parseFloat(calcCostoBotella ? calcCostoBotella.value : 0) || 0;
 
-        const onzasPorBotella = ml / 30.0;
-        const totalOnzas = botellas * onzasPorBotella;
-        const costoPorOnza = totalOnzas > 0 && costoBotella > 0 ? (costoBotella * botellas) / totalOnzas : 0;
+        const shotsPorBotella = getShots(ml);
+        const totalShots = botellas * shotsPorBotella;
+        const costoPorShot = totalShots > 0 && costoBotella > 0 ? (costoBotella * botellas) / totalShots : 0;
 
-        let txt = `👉 <strong>${botellas} Botella(s)</strong> de ${ml}ml = <span class="badge bg-warning text-dark border fw-bold fs-6">${totalOnzas.toFixed(2)} oz</span> totales`;
-        if (costoPorOnza > 0) {
-            txt += ` | Costo: <strong class="text-success">$${Math.round(costoPorOnza).toLocaleString('es-CO')} / oz</strong>`;
+        let txt = `👉 <strong>${botellas} Botella(s)</strong> de ${ml}ml = <span class="badge bg-warning text-dark border fw-bold fs-6">${totalShots.toFixed(2)} Shots</span> totales`;
+        if (costoPorShot > 0) {
+            txt += ` | Costo: <strong class="text-success">$${Math.round(costoPorShot).toLocaleString('es-CO')} / Shot</strong>`;
         }
         calcResultadoTexto.innerHTML = txt;
     }
 
-    if (calcNumBotellas) calcNumBotellas.addEventListener('input', actualizarCalculoOnzas);
-    if (calcTamanoBotella) calcTamanoBotella.addEventListener('change', actualizarCalculoOnzas);
-    if (calcCostoBotella) calcCostoBotella.addEventListener('input', actualizarCalculoOnzas);
+    if (calcNumBotellas) calcNumBotellas.addEventListener('input', actualizarCalculoShots);
+    if (calcTamanoBotella) calcTamanoBotella.addEventListener('change', actualizarCalculoShots);
+    if (calcCostoBotella) calcCostoBotella.addEventListener('input', actualizarCalculoShots);
 
-    if (btnAplicarOnzas) {
-        btnAplicarOnzas.addEventListener('click', function() {
+    if (btnAplicarShots) {
+        btnAplicarShots.addEventListener('click', function() {
             const botellas = parseFloat(calcNumBotellas.value) || 0;
             const ml = parseFloat(calcTamanoBotella.value) || 750;
             const costoBotella = parseFloat(calcCostoBotella ? calcCostoBotella.value : 0) || 0;
 
-            const onzasPorBotella = ml / 30.0;
-            const totalOnzas = botellas * onzasPorBotella;
-            const costoPorOnza = totalOnzas > 0 && costoBotella > 0 ? (costoBotella * botellas) / totalOnzas : 0;
+            const shotsPorBotella = getShots(ml);
+            const totalShots = botellas * shotsPorBotella;
+            const costoPorShot = totalShots > 0 && costoBotella > 0 ? (costoBotella * botellas) / totalShots : 0;
 
             if (inputStock) {
-                inputStock.value = parseFloat(totalOnzas.toFixed(2));
+                inputStock.value = parseFloat(totalShots.toFixed(2));
                 inputStock.classList.add('bg-warning-subtle');
                 setTimeout(() => inputStock.classList.remove('bg-warning-subtle'), 1200);
             }
-            if (inputCosto && costoPorOnza > 0) {
-                inputCosto.value = Math.round(costoPorOnza);
+            if (inputCosto && costoPorShot > 0) {
+                inputCosto.value = Math.round(costoPorShot);
                 inputCosto.classList.add('bg-success-subtle');
                 setTimeout(() => inputCosto.classList.remove('bg-success-subtle'), 1200);
             }

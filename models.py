@@ -204,8 +204,8 @@ class Product(db.Model):
                 return 'manojo'
             if any(k in nom_lower for k in ['(und)', ' und', 'unidad']):
                 return 'uds'
-            if any(k in nom_lower for k in ['onza', 'oz', 'ron', 'vodka', 'tequila', 'gin', 'ginebra', 'whisky', 'licor', 'trago', 'sirope', 'jarabe', 'triple sec', 'granel', 'aguardiente', 'brandy']):
-                return 'oz'
+            if any(k in nom_lower for k in ['shot', 'shots', 'onza', 'oz', 'ron', 'vodka', 'tequila', 'gin', 'ginebra', 'whisky', 'licor', 'trago', 'sirope', 'jarabe', 'triple sec', 'granel', 'aguardiente', 'brandy']):
+                return 'shots'
             if any(k in nom_lower for k in ['porcion', 'porción', 'paquete']):
                 return 'porc'
         return 'uds'
@@ -234,9 +234,9 @@ class Product(db.Model):
             return self.stock_disponible_calculado <= 5
         if self.variantes:
             return any(float(v.cantidad_stock or 0) <= 5 for v in self.variantes) or self.total_stock <= 10.0
-        if self.es_insumo and self.unidad_medida_display == 'oz':
-            # Para licores en onzas, menos de 25 oz (menos de 1 botella estándar de 750ml) es alerta
-            return float(self.cantidad_stock or 0) <= 25.0
+        if self.es_insumo and self.unidad_medida_display in ['shots', 'oz']:
+            # Para licores en shots, menos de 16 shots (1 botella estándar de 750ml) es alerta
+            return float(self.cantidad_stock or 0) <= 16.0
         return float(self.cantidad_stock or 0) <= 10.0
 
     @property
