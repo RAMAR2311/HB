@@ -324,8 +324,8 @@
 
         <!-- Panel Derecho: Carrito y Cobro -->
         <div class="col-lg-5 col-xl-4" id="seccionCarritoPOS">
-            <div class="pos-card p-4 position-sticky" style="top: 90px;">
-                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <div class="pos-card p-4 position-sticky d-flex flex-column" style="top: 90px; max-height: calc(100vh - 110px);">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-shrink-0">
                     <h5 class="fw-extrabold text-dark m-0"><i class="fa-solid fa-cart-shopping me-2 text-warning"></i>Orden en Curso</h5>
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-dark rounded-pill px-3 py-1" id="total_items">0 ítems</span>
@@ -336,7 +336,7 @@
                 </div>
 
                 <!-- Lista de ítems del carrito (Amplia y limpia) -->
-                <div id="cart_body" class="mb-3" style="max-height: 420px; overflow-y: auto;">
+                <div id="cart_body" class="mb-3 flex-grow-1" style="overflow-y: auto; min-height: 150px;">
                     <div class="text-center py-5 text-muted" id="empty_cart_msg">
                         <i class="fa-solid fa-basket-shopping fs-1 mb-2 opacity-25"></i>
                         <p class="small m-0">Toca un producto para agregarlo a la orden.</p>
@@ -344,13 +344,13 @@
                 </div>
 
                 <!-- Resumen Rápido de Consumo -->
-                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 mb-3" style="background-color: var(--color-bg-main); border: 2px solid var(--color-text-main);">
+                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 mb-3 flex-shrink-0" style="background-color: var(--color-bg-main); border: 2px solid var(--color-text-main);">
                     <span class="fw-bold text-dark fs-6 font-heading">Subtotal Consumido:</span>
                     <span class="pos-total-display fs-3 text-dark font-mono" id="display_subtotal_side">$0</span>
                 </div>
 
                 <!-- Botones de Acción de Orden -->
-                <div class="d-grid gap-2">
+                <div class="d-grid gap-2 flex-shrink-0">
                     <button type="button" id="btnEnviarComandaPOS" class="btn btn-hb-secondary btn-lg py-3 shadow-sm" onclick="procesarVentaPOS('abierta')">
                         <i class="fa-solid fa-print me-2 text-white"></i> 1. Enviar Comanda (Cuenta Abierta)
                     </button>
