@@ -164,6 +164,7 @@
                                 <th class="ps-3 text-white font-heading" style="font-size: 0.78rem;">TICKET / HORA</th>
                                 <th class="text-white font-heading" style="font-size: 0.78rem;">MÉTODO PAGO</th>
                                 <th class="text-white font-heading" style="font-size: 0.78rem;">PRODUCTOS / SERVICIOS</th>
+                                <th class="text-end text-white font-heading" style="font-size: 0.78rem;">PRECIO SISTEMA</th>
                                 <th class="text-end pe-3 text-white font-heading" style="font-size: 0.78rem;">TOTAL</th>
                             </tr>
                         </thead>
@@ -230,7 +231,21 @@
                                     {% endif %}
                                 </td>
 
-                                <!-- Total de la Venta -->
+                                <!-- Precio Sistema (Sin modificaciones ni descuentos) -->
+                                <td class="text-end">
+                                    {% if current_user.rol == 'admin' %}
+                                        {% set sys_total = namespace(value=0) %}
+                                        {% for d in v.detalles %}
+                                            {% set p_precio = d.producto.precio_final if d.producto else d.precio_unitario %}
+                                            {% set sys_total.value = sys_total.value + (d.cantidad_vendida * p_precio) %}
+                                        {% endfor %}
+                                        <span class="font-mono text-muted fs-6">
+                                            ${{ (sys_total.value)|cop }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Total de la Venta (Cobrado Real) -->
                                 <td class="text-end pe-3">
                                     {% if current_user.rol == 'admin' %}
                                     <span class="font-mono fw-extrabold text-dark fs-6">
@@ -245,7 +260,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="4" class="text-center py-5 text-muted">
+                                <td colspan="5" class="text-center py-5 text-muted">
                                     <i class="fa-solid fa-receipt fs-1 mb-3 opacity-25"></i>
                                     <h6 class="fw-bold">No hay ventas registradas en la fecha seleccionada</h6>
                                     <p class="small m-0">Las ventas facturadas aparecerán en esta tirilla automáticamente.</p>
@@ -256,7 +271,7 @@
                         {% if current_user.rol == 'admin' and ventas_del_dia %}
                         <tfoot style="background-color: var(--color-bg-main); border-top: 2px solid var(--color-text-main);">
                             <tr>
-                                <td colspan="3" class="ps-3 py-3 fw-extrabold font-heading text-dark">
+                                <td colspan="4" class="ps-3 py-3 fw-extrabold font-heading text-dark">
                                     TOTAL FACTURADO DEL DÍA ({{ ventas_del_dia|length }} Transacciones):
                                 </td>
                                 <td class="text-end pe-3 py-3 font-mono fw-extrabold fs-5 text-dark">
