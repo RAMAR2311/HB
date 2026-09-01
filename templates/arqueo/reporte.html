@@ -268,7 +268,7 @@
                                 {% if current_user.rol == 'admin' %}
                                     {% set sys_total = namespace(value=0) %}
                                     {% for d in v.detalles %}
-                                        {% set p_precio = d.variante.precio_sugerido if d.variante else (d.producto.precio_sugerido if d.producto else d.precio_venta_final) %}
+                                        {% set p_precio = d.precio_venta_final %}
                                         {% set sys_total.value = sys_total.value + (d.cantidad_vendida * p_precio) %}
                                     {% endfor %}
                                     <span class="font-mono text-muted fs-6">
